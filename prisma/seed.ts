@@ -40,7 +40,7 @@ async function main() {
         },
         {
             category: "Bonnet",
-            label: "Bonnet de protection hiver",
+            label: "Bonnet",
             minThreshold: 10,
             stock: { "TU": 50 }
         }
