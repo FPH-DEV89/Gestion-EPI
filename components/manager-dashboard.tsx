@@ -41,6 +41,8 @@ export default function ManagerDashboard({
     const [stock, setStock] = useState(initialStock)
     const [editingStockId, setEditingStockId] = useState<string | null>(null)
     const [editValues, setEditValues] = useState<Record<string, number>>({})
+    const [showSuccess, setShowSuccess] = useState(false)
+    const router = useRouter()
     // Auth is now handled by the proxy middleware
     const isAuthorized = true
 
@@ -71,7 +73,13 @@ export default function ManagerDashboard({
             await updateStock(itemId, size, Number(qty))
         }
         setEditingStockId(null)
-        window.location.reload()
+        setShowSuccess(true)
+        router.refresh()
+
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+            setShowSuccess(false)
+        }, 3000)
     }
 
     const exportToCSV = () => {
@@ -111,6 +119,15 @@ export default function ManagerDashboard({
                 </div>
                 <Badge className="bg-brand text-white px-4 py-1 text-sm">ADMIN MODE</Badge>
             </div>
+
+            {showSuccess && (
+                <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center gap-2 border border-emerald-400">
+                        <Check className="w-5 h-5" />
+                        <span className="font-bold uppercase tracking-wide text-sm">Modifications enregistrées !</span>
+                    </div>
+                </div>
+            )}
 
             <Tabs defaultValue="requests" className="space-y-6">
                 <TabsList className="bg-white border shadow-sm h-12">
