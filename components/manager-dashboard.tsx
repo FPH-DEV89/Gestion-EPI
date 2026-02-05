@@ -167,7 +167,10 @@ export default function ManagerDashboard({
                     <h1 className="text-3xl font-bold text-gray-900">Dashboard Manager</h1>
                     <p className="text-gray-500">Gestion des stocks et demandes d'EPI</p>
                 </div>
-                <Badge className="bg-brand text-white px-4 py-1 text-sm">ADMIN MODE</Badge>
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-300 font-mono">v2.1</span>
+                    <Badge className="bg-brand text-white px-4 py-1 text-sm">ADMIN MODE</Badge>
+                </div>
             </div>
 
             {showSuccess && (
