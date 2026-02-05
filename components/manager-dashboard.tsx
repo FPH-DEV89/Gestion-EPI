@@ -83,6 +83,51 @@ export default function ManagerDashboard({
         }, 3000)
     }
 
+    const exportRequestsToCSV = () => {
+        const pendingRequests = requests.filter(r => r.status === "Pending")
+        const headers = ["Date", "Collaborateur", "Service", "Equipement", "Taille", "Raison"]
+        const rows = pendingRequests.map(r => [
+            new Date(r.createdAt).toLocaleDateString("fr-FR"),
+            r.employeeName,
+            r.service,
+            r.category,
+            r.size,
+            r.reason || ""
+        ])
+
+        const csvContent = [
+            headers.join(";"),
+            ...rows.map(row => row.join(";"))
+        ].join("\n")
+
+        downloadCSV(csvContent, `demandes_en_cours_${new Date().toISOString().split('T')[0]}.csv`)
+    }
+
+    const exportInventoryToCSV = () => {
+        const headers = ["Equipement", "Categorie", "Taille", "Quantite", "Seuil Min", "Alerte"]
+        const rows: string[][] = []
+
+        stock.forEach(item => {
+            Object.entries(item.stock).forEach(([size, qty]: [string, any]) => {
+                rows.push([
+                    item.label,
+                    item.category,
+                    size,
+                    qty.toString(),
+                    item.minThreshold.toString(),
+                    qty < item.minThreshold ? "OUI" : "NON"
+                ])
+            })
+        })
+
+        const csvContent = [
+            headers.join(";"),
+            ...rows.map(row => row.join(";"))
+        ].join("\n")
+
+        downloadCSV(csvContent, `inventaire_stock_${new Date().toISOString().split('T')[0]}.csv`)
+    }
+
     const exportToCSV = () => {
         const processedRequests = requests.filter(r => r.status !== "Pending")
         const headers = ["Date", "Collaborateur", "Service", "Equipement", "Taille", "Statut"]
@@ -100,11 +145,15 @@ export default function ManagerDashboard({
             ...rows.map(row => row.join(";"))
         ].join("\n")
 
-        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' })
+        downloadCSV(csvContent, `historique_demandes_epi_${new Date().toISOString().split('T')[0]}.csv`)
+    }
+
+    const downloadCSV = (content: string, filename: string) => {
+        const blob = new Blob(["\uFEFF" + content], { type: 'text/csv;charset=utf-8;' })
         const link = document.createElement("a")
         const url = URL.createObjectURL(blob)
         link.setAttribute("href", url)
-        link.setAttribute("download", `historique_demandes_epi_${new Date().toISOString().split('T')[0]}.csv`)
+        link.setAttribute("download", filename)
         link.style.visibility = 'hidden'
         document.body.appendChild(link)
         link.click()
@@ -145,9 +194,21 @@ export default function ManagerDashboard({
 
                 <TabsContent value="requests">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Demandes en cours</CardTitle>
-                            <CardDescription>Validez ou refusez les demandes de vos collaborateurs.</CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                            <div>
+                                <CardTitle>Demandes en cours</CardTitle>
+                                <CardDescription>Validez ou refusez les demandes de vos collaborateurs.</CardDescription>
+                            </div>
+                            {requests.filter(r => r.status === "Pending").length > 0 && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-brand border-brand/20 hover:bg-brand/5"
+                                    onClick={exportRequestsToCSV}
+                                >
+                                    <Download className="w-4 h-4 mr-2" /> Exporter CSV
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -262,6 +323,17 @@ export default function ManagerDashboard({
                 </TabsContent>
 
                 <TabsContent value="inventory">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold text-gray-900">État des stocks</h2>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-brand border-brand/20 hover:bg-brand/5"
+                            onClick={exportInventoryToCSV}
+                        >
+                            <Download className="w-4 h-4 mr-2" /> Exporter Inventaire
+                        </Button>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {stock.map(item => (
                             <Card key={item.id} className="overflow-hidden">
