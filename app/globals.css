@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #004593;
+  /* Darker blue from screenshot */
+  --color-brand-foreground: #FFFFFF;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+}
+
+:root {
+  --background: #F8FAFC;
+  /* Softer gray/white from screenshot */
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .btn-brand {
+    @apply bg-[--color-brand] text-[--color-brand-foreground] hover:bg-[--color-brand]/90 transition-all rounded-[--radius-xl];
+  }
+}
