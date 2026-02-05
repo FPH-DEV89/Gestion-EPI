@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma"
 import EmployeeWizard from "@/components/employee-wizard"
 
+export const dynamic = "force-dynamic"
+
 export default async function HomePage() {
   const stockItems = await prisma.stockItem.findMany()
 

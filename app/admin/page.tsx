@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma"
 import ManagerDashboard from "@/components/manager-dashboard"
 
+export const dynamic = "force-dynamic"
+
 export default async function AdminPage() {
     const [requests, stock] = await Promise.all([
         prisma.request.findMany({ orderBy: { createdAt: 'desc' } }),
