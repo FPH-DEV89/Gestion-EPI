@@ -44,7 +44,7 @@ export async function validateRequest(requestId: string) {
 
         if (!stockItem) return { success: false, error: "Équipement introuvable" };
 
-        const stock = stockItem.stock as Record<string, number>;
+        const stock = (stockItem.stock as Record<string, number>) || {};
         const currentQuantity = stock[request.size] || 0;
 
         if (currentQuantity <= 0) {
@@ -94,7 +94,7 @@ export async function updateStock(categoryId: string, size: string, quantity: nu
 
         if (!stockItem) return { success: false, error: "Équipement introuvable" };
 
-        const stock = stockItem.stock as Record<string, number>;
+        const stock = (stockItem.stock as Record<string, number>) || {};
         const newStock = { ...stock, [size]: quantity };
 
         await prisma.stockItem.update({

@@ -384,7 +384,7 @@ export default function ManagerDashboard({
                                                 )
                                             })}
                                         </div>
-                                        {Object.values(item.stock).some((q: any) => q < item.minThreshold) && (
+                                        {Object.values(item.stock || {}).some((q: any) => q < item.minThreshold) && (
                                             <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 p-2 rounded-lg">
                                                 <Check className="w-3 h-3 rotate-180" /> Stock critique : Réapprovisionnement nécessaire.
                                             </div>

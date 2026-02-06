@@ -123,7 +123,7 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                         <Label>Taille Disponible</Label>
                         <div className="grid grid-cols-3 gap-2">
                             {sizes.map(size => {
-                                const isOutOfStock = (selectedCategory?.stock[size] || 0) <= 0
+                                const isOutOfStock = (selectedCategory?.stock?.[size] || 0) <= 0
                                 return (
                                     <Button
                                         key={size}
