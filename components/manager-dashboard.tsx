@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { validateRequest, rejectRequest, updateStock } from "@/app/actions"
 import { sortSizes } from "@/lib/utils"
 import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
 
 interface Request {
@@ -40,6 +41,15 @@ export default function ManagerDashboard({
 }) {
     const [requests, setRequests] = useState(initialRequests)
     const [stock, setStock] = useState(initialStock)
+    const [searchTerm, setSearchTerm] = useState("")
+    const [filterCategory, setFilterCategory] = useState("ALL")
+
+    const filteredStock = stock.filter(item => {
+        const matchesSearch = item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.category.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesCategory = filterCategory === "ALL" || item.category === filterCategory
+        return matchesSearch && matchesCategory
+    })
 
     // Sync state with props when router.refresh() is called
     useEffect(() => {
@@ -412,8 +422,30 @@ export default function ManagerDashboard({
                         </CardHeader>
                     </Card>
 
+                    <div className="flex gap-4 mb-6">
+                        <div className="flex-1">
+                            <Input
+                                placeholder="Rechercher un équipement..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="bg-white"
+                            />
+                        </div>
+                        <Select value={filterCategory} onValueChange={setFilterCategory}>
+                            <SelectTrigger className="w-[200px] bg-white">
+                                <SelectValue placeholder="Catégorie" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL">Toutes catégories</SelectItem>
+                                {Array.from(new Set(stock.map(i => i.category))).map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {stock.map(item => (
+                        {filteredStock.map(item => (
                             <Card key={item.id} className="overflow-hidden">
                                 <CardHeader className="border-b bg-gray-50/50">
                                     <div className="flex justify-between items-start">
