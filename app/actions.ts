@@ -1,5 +1,4 @@
-"use server";
-
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
@@ -81,7 +80,7 @@ export async function validateRequest(requestId: string) {
         }
 
         // Decrement stock for all items
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             for (const item of request.items) {
                 const stockItem = await tx.stockItem.findFirst({
                     where: { category: item.category },
