@@ -331,61 +331,21 @@ export default function ManagerDashboard({
                                                 <Badge variant="secondary">{req.status}</Badge>
                                             </TableCell>
                                             <TableCell className="text-right space-x-2">
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                                                            Valider
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Confirmer la validation</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Voulez-vous vraiment valider la demande de <strong>{req.employeeName}</strong> ?
-                                                                <br />
-                                                                Cette action mettra à jour les stocks.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                            <AlertDialogAction
-                                                                onClick={() => handleValidate(req.id, req.employeeName)}
-                                                                className="bg-emerald-600 hover:bg-emerald-700"
-                                                            >
-                                                                Valider
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="text-red-600 border-red-200 hover:bg-red-50"
-                                                        >
-                                                            Refuser
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Refuser la demande</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Voulez-vous vraiment refuser la demande de <strong>{req.employeeName}</strong> ?
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                                            <AlertDialogAction
-                                                                onClick={() => handleReject(req.id, req.employeeName)}
-                                                                className="bg-red-600 hover:bg-red-700 text-white"
-                                                            >
-                                                                Refuser
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                    onClick={() => handleValidate(req.id, req.employeeName)}
+                                                >
+                                                    Valider
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                                    onClick={() => handleReject(req.id, req.employeeName)}
+                                                >
+                                                    Refuser
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
