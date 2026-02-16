@@ -51,6 +51,17 @@ export default function ManagerDashboard({
         return matchesSearch && matchesCategory
     })
 
+    const [historySearchTerm, setHistorySearchTerm] = useState("")
+    const [historyFilterCategory, setHistoryFilterCategory] = useState("ALL")
+
+    const filteredHistory = requests.filter(r => {
+        if (r.status === "Pending") return false // Only history
+        const matchesSearch = r.employeeName.toLowerCase().includes(historySearchTerm.toLowerCase()) ||
+            r.items.some(i => i.category.toLowerCase().includes(historySearchTerm.toLowerCase()))
+        const matchesCategory = historyFilterCategory === "ALL" || r.items.some(i => i.category === historyFilterCategory)
+        return matchesSearch && matchesCategory
+    })
+
     // Sync state with props when router.refresh() is called
     useEffect(() => {
         setRequests(initialRequests)
@@ -352,6 +363,29 @@ export default function ManagerDashboard({
                                 </Button>
                             )}
                         </CardHeader>
+
+                        <div className="flex gap-4 mb-6 px-6">
+                            <div className="flex-1">
+                                <Input
+                                    placeholder="Rechercher par collaborateur ou équipement..."
+                                    value={historySearchTerm}
+                                    onChange={(e) => setHistorySearchTerm(e.target.value)}
+                                    className="bg-white"
+                                />
+                            </div>
+                            <Select value={historyFilterCategory} onValueChange={setHistoryFilterCategory}>
+                                <SelectTrigger className="w-[200px] bg-white">
+                                    <SelectValue placeholder="Catégorie" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">Toutes catégories</SelectItem>
+                                    {Array.from(new Set(requests.flatMap(r => r.items.map(i => i.category)))).sort().map(cat => (
+                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         <CardContent>
                             <Table>
                                 <TableHeader>
@@ -364,7 +398,7 @@ export default function ManagerDashboard({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {requests.filter(r => r.status !== "Pending").map(req => (
+                                    {filteredHistory.map(req => (
                                         <TableRow key={req.id}>
                                             <TableCell className="text-xs text-gray-500">
                                                 {new Date(req.createdAt).toLocaleDateString("fr-FR")}
@@ -391,7 +425,7 @@ export default function ManagerDashboard({
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                    {requests.filter(r => r.status !== "Pending").length === 0 && (
+                                    {filteredHistory.length === 0 && (
                                         <TableRow>
                                             <TableCell colSpan={5} className="text-center py-10 text-gray-400">
                                                 Aucune demande dans l'historique.
