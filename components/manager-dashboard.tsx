@@ -26,6 +26,15 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
 
 interface Request {
     id: string
@@ -83,6 +92,36 @@ export default function ManagerDashboard({
     useEffect(() => {
         setStock(initialStock)
     }, [initialStock])
+
+    // Pagination Historique
+    const [historyPage, setHistoryPage] = useState(1)
+    const itemsPerPage = 10
+    const totalHistoryPages = Math.ceil(filteredHistory.length / itemsPerPage)
+
+    // Reset page on filter change
+    useEffect(() => {
+        setHistoryPage(1)
+    }, [historySearchTerm, historyFilterCategory])
+
+    const currentHistoryItems = filteredHistory.slice(
+        (historyPage - 1) * itemsPerPage,
+        historyPage * itemsPerPage
+    )
+
+    // Pagination Inventaire
+    const [inventoryPage, setInventoryPage] = useState(1)
+    const inventoryItemsPerPage = 10
+    const totalInventoryPages = Math.ceil(filteredStock.length / inventoryItemsPerPage)
+
+    // Reset page on filter change
+    useEffect(() => {
+        setInventoryPage(1)
+    }, [searchTerm, filterCategory])
+
+    const currentStockItems = filteredStock.slice(
+        (inventoryPage - 1) * inventoryItemsPerPage,
+        inventoryPage * inventoryItemsPerPage
+    )
 
     const [editingStockId, setEditingStockId] = useState<string | null>(null)
     const [editValues, setEditValues] = useState<Record<string, number>>({})
@@ -368,6 +407,8 @@ export default function ManagerDashboard({
                     </Card>
                 </TabsContent>
 
+
+
                 <TabsContent value="history">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -400,7 +441,7 @@ export default function ManagerDashboard({
                                 <SelectTrigger className="w-[200px] bg-white">
                                     <SelectValue placeholder="Catégorie" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent bg-white>
                                     <SelectItem value="ALL">Toutes catégories</SelectItem>
                                     {Array.from(new Set(requests.flatMap(r => r.items.map(i => i.category)))).sort().map(cat => (
                                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
@@ -421,7 +462,7 @@ export default function ManagerDashboard({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredHistory.map(req => (
+                                    {currentHistoryItems.map(req => (
                                         <TableRow key={req.id}>
                                             <TableCell className="text-xs text-gray-500">
                                                 {new Date(req.createdAt).toLocaleDateString("fr-FR")}
@@ -463,9 +504,46 @@ export default function ManagerDashboard({
                                     )}
                                 </TableBody>
                             </Table>
+
+                            {/* Pagination Controls */}
+                            {totalHistoryPages > 1 && (
+                                <div className="mt-4">
+                                    <Pagination>
+                                        <PaginationContent>
+                                            <PaginationItem>
+                                                <PaginationPrevious
+                                                    onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                                                    className={`cursor-pointer ${historyPage === 1 ? "pointer-events-none opacity-50" : ""}`}
+                                                />
+                                            </PaginationItem>
+
+                                            {Array.from({ length: totalHistoryPages }, (_, i) => i + 1).map((page) => (
+                                                <PaginationItem key={page}>
+                                                    <PaginationLink
+                                                        isActive={page === historyPage}
+                                                        onClick={() => setHistoryPage(page)}
+                                                        className="cursor-pointer"
+                                                    >
+                                                        {page}
+                                                    </PaginationLink>
+                                                </PaginationItem>
+                                            ))}
+
+                                            <PaginationItem>
+                                                <PaginationNext
+                                                    onClick={() => setHistoryPage(p => Math.min(totalHistoryPages, p + 1))}
+                                                    className={`cursor-pointer ${historyPage === totalHistoryPages ? "pointer-events-none opacity-50" : ""}`}
+                                                />
+                                            </PaginationItem>
+                                        </PaginationContent>
+                                    </Pagination>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
+
+
 
                 <TabsContent value="inventory" className="space-y-6">
                     <Card>
@@ -498,7 +576,7 @@ export default function ManagerDashboard({
                             <SelectTrigger className="w-[200px] bg-white">
                                 <SelectValue placeholder="Catégorie" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent bg-white>
                                 <SelectItem value="ALL">Toutes catégories</SelectItem>
                                 {Array.from(new Set(stock.map(i => i.category))).map(cat => (
                                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
@@ -508,7 +586,7 @@ export default function ManagerDashboard({
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {filteredStock.map(item => (
+                        {currentStockItems.map(item => (
                             <Card key={item.id} className="overflow-hidden">
                                 <CardHeader className="border-b bg-gray-50/50">
                                     <div className="flex justify-between items-start">
@@ -561,6 +639,41 @@ export default function ManagerDashboard({
                             </Card>
                         ))}
                     </div>
+
+                    {/* Pagination Controls Inventory */}
+                    {totalInventoryPages > 1 && (
+                        <div className="mt-8">
+                            <Pagination>
+                                <PaginationContent>
+                                    <PaginationItem>
+                                        <PaginationPrevious
+                                            onClick={() => setInventoryPage(p => Math.max(1, p - 1))}
+                                            className={`cursor-pointer ${inventoryPage === 1 ? "pointer-events-none opacity-50" : ""}`}
+                                        />
+                                    </PaginationItem>
+
+                                    {Array.from({ length: totalInventoryPages }, (_, i) => i + 1).map((page) => (
+                                        <PaginationItem key={page}>
+                                            <PaginationLink
+                                                isActive={page === inventoryPage}
+                                                onClick={() => setInventoryPage(page)}
+                                                className="cursor-pointer"
+                                            >
+                                                {page}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    ))}
+
+                                    <PaginationItem>
+                                        <PaginationNext
+                                            onClick={() => setInventoryPage(p => Math.min(totalInventoryPages, p + 1))}
+                                            className={`cursor-pointer ${inventoryPage === totalInventoryPages ? "pointer-events-none opacity-50" : ""}`}
+                                        />
+                                    </PaginationItem>
+                                </PaginationContent>
+                            </Pagination>
+                        </div>
+                    )}
                 </TabsContent>
 
 
