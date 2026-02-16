@@ -35,4 +35,10 @@ Ce document recense les erreurs rencontrées lors du développement et du déplo
 ## 🚀 Actions Correctives pour l'Équipe
 1. **Systématiser le `npm run build` local** avant tout push vers la branche `main`.
 2. **Auditer les fichiers orphelins** régulièrement.
-3. **Documenter les variables d'env** dans un `.env.example` à jour.
+Documenter les variables d'env dans un `.env.example` à jour.
+
+### 6. Vérification des Déploiements (`git push`)
+- **Problème** : Modification de code (Filtres Historique) non déployée car le commit ne contenait pas les fichiers (`git commit` sans `git add` au préalable ou erreur de commande). L'agent pensait avoir fini alors que rien n'avait changé en prod.
+- **Cause** : Confiance aveugle dans l'enchaînement de commandes ou mauvaise lecture du retour de `git status`.
+- **Solution** : Toujours vérifier `git status` pour confirmer que le "working tree" est propre APRES le commit et AVANT le push. Vérifier si le commit contient bien les modifications attendues (`git show --stat`).
+- **Leçon** : **« Trust, but verify »**. Si l'utilisateur dit "je ne vois rien", la première étape est de vérifier si le code est *réellement* parti, pas de supposer un délai de cache.

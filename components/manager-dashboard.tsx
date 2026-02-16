@@ -13,6 +13,7 @@ import { sortSizes } from "@/lib/utils"
 import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Request {
     id: string
@@ -73,10 +74,9 @@ export default function ManagerDashboard({
 
     const [editingStockId, setEditingStockId] = useState<string | null>(null)
     const [editValues, setEditValues] = useState<Record<string, number>>({})
-    const [showSuccess, setShowSuccess] = useState(false)
-    const [successMessage, setSuccessMessage] = useState("")
     const [activeTab, setActiveTab] = useState("requests")
     const router = useRouter()
+    const { toast } = useToast()
     // Auth is now handled by the proxy middleware
     const isAuthorized = true
 
@@ -89,12 +89,18 @@ export default function ManagerDashboard({
 
         const res = await validateRequest(id)
         if (res.success) {
-            setSuccessMessage("Demande validée avec succès !")
-            setShowSuccess(true)
+            toast({
+                title: "Demande validée",
+                description: `La demande de ${employeeName} a été validée avec succès.`,
+                className: "bg-emerald-50 border-emerald-200 text-emerald-800",
+            })
             router.refresh()
-            setTimeout(() => setShowSuccess(false), 3000)
         } else {
-            alert(res.error)
+            toast({
+                variant: "destructive",
+                title: "Erreur",
+                description: res.error || "Une erreur est survenue.",
+            })
         }
     }
 
@@ -105,12 +111,17 @@ export default function ManagerDashboard({
 
         const res = await rejectRequest(id)
         if (res.success) {
-            setSuccessMessage("Demande refusée.")
-            setShowSuccess(true)
+            toast({
+                title: "Demande refusée",
+                description: `La demande de ${employeeName} a été refusée.`,
+            })
             router.refresh()
-            setTimeout(() => setShowSuccess(false), 3000)
         } else {
-            alert(res.error)
+            toast({
+                variant: "destructive",
+                title: "Erreur",
+                description: res.error || "Une erreur est survenue.",
+            })
         }
     }
 
@@ -133,14 +144,13 @@ export default function ManagerDashboard({
             await updateStock(itemId, size, Number(qty))
         }
         setEditingStockId(null)
-        setSuccessMessage("Modifications enregistrées !")
-        setShowSuccess(true)
-        router.refresh()
 
-        // Hide success message after 3 seconds
-        setTimeout(() => {
-            setShowSuccess(false)
-        }, 3000)
+        toast({
+            title: "Stock mis à jour",
+            description: "Les quantités ont été enregistrées.",
+            className: "bg-blue-50 border-blue-200 text-blue-800",
+        })
+        router.refresh()
     }
 
     const exportRequestsToCSV = () => {
@@ -166,6 +176,10 @@ export default function ManagerDashboard({
         ].join("\n")
 
         downloadCSV(csvContent, `demandes_en_cours_${new Date().toISOString().split('T')[0]}.csv`)
+        toast({
+            title: "Export CSV",
+            description: "Le fichier des demandes en cours a été généré.",
+        })
     }
 
     const exportInventoryToCSV = () => {
@@ -191,6 +205,10 @@ export default function ManagerDashboard({
         ].join("\n")
 
         downloadCSV(csvContent, `inventaire_stock_${new Date().toISOString().split('T')[0]}.csv`)
+        toast({
+            title: "Export CSV",
+            description: "L'inventaire a été exporté avec succès.",
+        })
     }
 
     const exportToCSV = () => {
@@ -216,6 +234,10 @@ export default function ManagerDashboard({
         ].join("\n")
 
         downloadCSV(csvContent, `historique_demandes_epi_${new Date().toISOString().split('T')[0]}.csv`)
+        toast({
+            title: "Export CSV",
+            description: "L'historique a été exporté avec succès.",
+        })
     }
 
     const downloadCSV = (content: string, filename: string) => {
@@ -238,15 +260,6 @@ export default function ManagerDashboard({
                     <p className="text-gray-500">Gestion des stocks et demandes d'EPI</p>
                 </div>
             </div>
-
-            {showSuccess && (
-                <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className="bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg shadow-emerald-500/20 flex items-center gap-2 border border-emerald-400">
-                        <Check className="w-5 h-5" />
-                        <span className="font-bold uppercase tracking-wide text-sm">{successMessage}</span>
-                    </div>
-                </div>
-            )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="bg-white border shadow-sm h-12">
