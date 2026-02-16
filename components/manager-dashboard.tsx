@@ -347,8 +347,14 @@ export default function ManagerDashboard({
                                     ))}
                                     {requests.filter(r => r.status === "Pending").length === 0 && (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-10 text-gray-400">
-                                                Aucune demande en attente.
+                                            <TableCell colSpan={5} className="h-64 text-center">
+                                                <div className="flex flex-col items-center justify-center text-gray-500">
+                                                    <div className="bg-gray-100 p-4 rounded-full mb-3">
+                                                        <ClipboardList className="w-8 h-8 text-gray-400" />
+                                                    </div>
+                                                    <p className="font-medium text-lg">Aucune demande en attente</p>
+                                                    <p className="text-sm text-gray-400 mt-1">Tout est à jour ! Vous pouvez vous détendre ☕</p>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     )}
@@ -440,8 +446,14 @@ export default function ManagerDashboard({
                                     ))}
                                     {filteredHistory.length === 0 && (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-10 text-gray-400">
-                                                Aucune demande dans l'historique.
+                                            <TableCell colSpan={5} className="h-64 text-center">
+                                                <div className="flex flex-col items-center justify-center text-gray-500">
+                                                    <div className="bg-gray-100 p-4 rounded-full mb-3">
+                                                        <History className="w-8 h-8 text-gray-400" />
+                                                    </div>
+                                                    <p className="font-medium text-lg">Aucun historique trouvé</p>
+                                                    <p className="text-sm text-gray-400 mt-1">Essayez de modifier vos filtres de recherche.</p>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     )}
