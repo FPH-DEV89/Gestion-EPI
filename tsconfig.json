@@ -23,6 +23,7 @@
       }
     ],
     "paths": {
+<<<<<<< HEAD
       "@/*": [
         "./*"
       ]
@@ -31,6 +32,10 @@
       "vitest/globals",
       "@testing-library/jest-dom"
     ]
+=======
+      "@/*": ["./src/*"]
+    }
+>>>>>>> 2c0a7108d394bac3168f88fdbacf423335bce91c
   },
   "include": [
     "next-env.d.ts",

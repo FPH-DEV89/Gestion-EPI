@@ -1,13 +1,13 @@
-import { PrismaClient } from '@prisma/client'
+const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...')
+  console.log('Seeding database...');
 
   // Clear existing data
-  await prisma.request.deleteMany()
-  await prisma.stockItem.deleteMany()
+  await prisma.request.deleteMany();
+  await prisma.stockItem.deleteMany();
 
   // Create stock items with various sizes
   const stockItems = [
@@ -61,23 +61,23 @@ async function main() {
         'TU': 20
       }
     }
-  ]
+  ];
 
   for (const item of stockItems) {
     await prisma.stockItem.create({
       data: item
-    })
-    console.log(`Created stock item: ${item.label}`)
+    });
+    console.log(`Created stock item: ${item.label}`);
   }
 
-  console.log('Seed completed successfully!')
+  console.log('Seed completed successfully!');
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });
