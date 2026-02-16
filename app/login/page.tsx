@@ -1,6 +1,7 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
+import { useActionState } from 'react'
+import { useFormStatus } from 'react-dom'
 import { authenticate } from '@/app/lib/actions'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Lock } from "lucide-react"
 
 export default function LoginPage() {
-    const [errorMessage, dispatch] = useFormState(authenticate, undefined)
+    const [errorMessage, dispatch, isPending] = useActionState(authenticate, undefined)
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
