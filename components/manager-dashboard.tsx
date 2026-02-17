@@ -297,11 +297,11 @@ export default function ManagerDashboard({
     }
 
     return (
-        <div className="max-w-6xl mx-auto py-10 px-4 dark:bg-gray-900 min-h-screen transition-colors">
-            <div className="flex justify-between items-center mb-8">
+        <div className="max-w-6xl mx-auto py-10 px-4 min-h-screen transition-colors">
+            <div className="flex justify-between items-center mb-12">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard Manager</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Gestion des stocks et demandes d'EPI</p>
+                    <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Dashboard Manager</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Gestion intelligente de vos équipements</p>
                 </div>
             </div>
 

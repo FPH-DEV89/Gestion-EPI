@@ -90,9 +90,9 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
     }
 
     return (
-        <Card className="max-w-md mx-auto mt-10 shadow-2xl border-none rounded-4xl overflow-hidden">
-            <CardHeader className="bg-white pt-10 pb-2 px-8">
-                <CardTitle className="text-3xl font-black text-slate-800 tracking-tight">
+        <Card className="max-w-md mx-auto mt-10 shadow-2xl border-none rounded-4xl overflow-hidden bg-white dark:bg-slate-900/80 dark:backdrop-blur-2xl dark:ring-1 dark:ring-white/10">
+            <CardHeader className="bg-transparent pt-10 pb-2 px-8">
+                <CardTitle className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
                     {step === 2 ? "Quels EPI ?" : step === 3 ? "Tailles" : step === 4 ? "Motif" : "Demande EPI"}
                 </CardTitle>
             </CardHeader>
@@ -110,7 +110,7 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                         </div>
                         <div>
                             <Input
-                                className="bg-slate-50 border-none h-16 rounded-2xl px-6 text-lg placeholder:text-slate-300"
+                                className="bg-slate-50 dark:bg-slate-800/50 border-none h-16 rounded-2xl px-6 text-lg placeholder:text-slate-300"
                                 placeholder="Prénom"
                                 value={form.firstName || ""}
                                 onChange={e => setForm({ ...form, firstName: e.target.value })}
@@ -118,13 +118,13 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                         </div>
                         <div>
                             <select
-                                className="w-full bg-slate-50 border-none h-16 rounded-2xl px-6 text-lg text-slate-500 appearance-none outline-none focus:ring-2 focus:ring-brand/20 transition-all"
+                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-none h-16 rounded-2xl px-6 text-lg text-slate-500 dark:text-slate-300 appearance-none outline-none focus:ring-2 focus:ring-brand/20 transition-all font-medium"
                                 value={form.service || ""}
                                 onChange={e => setForm({ ...form, service: e.target.value })}
                             >
-                                <option value="" disabled>Service...</option>
+                                <option value="" disabled className="dark:bg-slate-900">Service...</option>
                                 {["LAD", "MAG", "REA", "GDS", "EXPE", "RECEP", "TECHNIQUE", "ENCADREMENT"].map(s => (
-                                    <option key={s} value={s}>{s}</option>
+                                    <option key={s} value={s} className="dark:bg-slate-900">{s}</option>
                                 ))}
                             </select>
                         </div>
@@ -198,17 +198,17 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                     <div className="space-y-4">
                         <div>
                             <select
-                                className="w-full bg-slate-50 border-none h-16 rounded-2xl px-6 text-lg text-slate-500 appearance-none outline-none focus:ring-2 focus:ring-brand/20 transition-all"
+                                className="w-full bg-slate-50 dark:bg-slate-800/50 border-none h-16 rounded-2xl px-6 text-lg text-slate-500 dark:text-slate-300 appearance-none outline-none focus:ring-2 focus:ring-brand/20 transition-all font-medium"
                                 value={form.reason || ""}
                                 onChange={e => setForm({ ...form, reason: e.target.value })}
                             >
-                                <option value="" disabled>Pourquoi cette demande ?</option>
-                                <option value="Usure">Usure</option>
-                                <option value="Perte">Perte</option>
-                                <option value="Nouvel arrivant">Nouvel arrivant</option>
+                                <option value="" disabled className="dark:bg-slate-900">Pourquoi cette demande ?</option>
+                                <option value="Usure" className="dark:bg-slate-900">Usure</option>
+                                <option value="Perte" className="dark:bg-slate-900">Perte</option>
+                                <option value="Nouvel arrivant" className="dark:bg-slate-900">Nouvel arrivant</option>
                             </select>
                         </div>
-                        <div className="bg-slate-50 rounded-3xl p-6 space-y-4 border border-slate-100 max-h-[300px] overflow-y-auto">
+                        <div className="bg-slate-50 dark:bg-slate-800/30 rounded-3xl p-6 space-y-4 border border-slate-100 dark:border-white/5 max-h-[300px] overflow-y-auto">
                             <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2">
                                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                     <Info className="w-3 h-3" /> Récapitulatif
@@ -250,7 +250,7 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                 )}
             </CardContent>
 
-            <CardFooter className="flex justify-end border-t border-slate-100 p-8">
+            <CardFooter className="flex justify-end border-t border-slate-100 dark:border-white/5 p-8">
                 {step > 1 && (
                     <Button variant="ghost" className="mr-auto text-slate-400 hover:text-slate-600" onClick={back} disabled={loading}>
                         <ChevronLeft className="w-4 h-4 mr-2" /> Retour
