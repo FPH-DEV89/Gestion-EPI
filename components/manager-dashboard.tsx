@@ -37,11 +37,17 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination"
 
+interface RequestItem {
+    category: string
+    size: string
+    snapshottedPrice: number
+}
+
 interface Request {
     id: string
     employeeName: string
     service: string
-    items: { category: string; size: string }[]
+    items: RequestItem[]
     reason: string
     status: string
     createdAt: string
@@ -52,6 +58,7 @@ interface StockItem {
     category: string
     label: string
     minThreshold: number
+    price: number
     stock: Record<string, number>
 }
 
@@ -345,6 +352,7 @@ export default function ManagerDashboard({
                                         <TableHead>Collaborateur</TableHead>
                                         <TableHead>Équipement</TableHead>
                                         <TableHead>Taille</TableHead>
+                                        <TableHead>Coût Est.</TableHead>
                                         <TableHead>Statut</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
@@ -365,6 +373,11 @@ export default function ManagerDashboard({
                                                             <Badge variant="secondary" className="text-[10px] h-5">{item.size}</Badge>
                                                         </div>
                                                     ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="font-bold text-brand">
+                                                    {req.items.reduce((sum, item) => sum + item.snapshottedPrice, 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -459,6 +472,7 @@ export default function ManagerDashboard({
                                         <TableHead>Collaborateur</TableHead>
                                         <TableHead>Équipement</TableHead>
                                         <TableHead>Taille</TableHead>
+                                        <TableHead>Coût</TableHead>
                                         <TableHead>Statut</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -480,6 +494,11 @@ export default function ManagerDashboard({
                                                             <Badge variant="outline" className="text-[10px] h-5">{item.size}</Badge>
                                                         </div>
                                                     ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-xs font-mono">
+                                                    {req.items.reduce((sum, item) => sum + item.snapshottedPrice, 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -593,7 +612,12 @@ export default function ManagerDashboard({
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <CardTitle>{item.label}</CardTitle>
-                                            <CardDescription>{item.category}</CardDescription>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <CardDescription className="font-mono text-brand font-bold bg-brand/5 px-2 py-0.5 rounded">
+                                                    {item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                                                </CardDescription>
+                                                <CardDescription>• {item.category}</CardDescription>
+                                            </div>
                                         </div>
                                         {editingStockId === item.id ? (
                                             <div className="flex gap-2">
