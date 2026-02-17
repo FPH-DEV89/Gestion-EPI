@@ -58,9 +58,23 @@ npm test
 
 ## 🔐 Accès Manager
 
-Pour accéder à la zone manager (`/admin`), utilisez les identifiants par défaut (en dev) :
-- **Email** : `admin@epi-manager.com`
-- **Mot de passe** : `admin123`
+## 🔐 Accès Manager
+
+L'application utilise une authentification sécurisée via base de données (Table `User`).
+
+### Compte Super Admin
+- **Email** : `admin@example.com`
+- **Mot de passe** : `REDACTED_PASSWORD`
+
+### Création d'un nouvel admin (Ligne de commande)
+Si vous devez réinitialiser ou créer un admin :
+```bash
+node scripts/create-admin.js
+```
+
+## 📱 QR Code (Fonctionnalité Supprimée)
+Le générateur de QR code intégré a été retiré (v0.2.0).
+Pour générer le QR code d'accès à la borne, utilisez un outil externe comme [QR Code Monkey](https://www.qrcode-monkey.com/).
 
 ---
 
