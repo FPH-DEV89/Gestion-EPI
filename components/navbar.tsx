@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { HardHat, LogOut } from "lucide-react"
 import { handleSignOut } from "@/app/lib/actions"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function Navbar() {
     const pathname = usePathname()
@@ -38,6 +39,8 @@ export default function Navbar() {
                         </Link>
                     )
                 })}
+
+                <ThemeToggle />
 
                 {pathname.startsWith("/admin") && (
                     <form action={handleSignOut}>
