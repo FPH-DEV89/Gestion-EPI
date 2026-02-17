@@ -24,6 +24,19 @@ export default async function HomePage() {
     )
   } catch (error) {
     console.error("Database error:", error)
+
+    // Fallback for development/offline mode
+    if (process.env.NODE_ENV === 'development') {
+      return (
+        <main className="min-h-screen bg-background p-4 md:p-10">
+          <EmployeeWizard stockItems={[]} />
+          <div className="fixed bottom-4 right-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg text-xs">
+            Mode Déconnecté (DB inaccessible)
+          </div>
+        </main>
+      )
+    }
+
     return (
       <main className="min-h-screen bg-background p-4 md:p-10 flex items-center justify-center">
         <div className="text-center">

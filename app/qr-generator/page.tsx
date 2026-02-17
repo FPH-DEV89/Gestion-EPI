@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { QRCodeSVG } from "qrcode.react"
+import { QRCodeCanvas } from "qrcode.react"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,28 +12,15 @@ export default function QRGeneratorPage() {
     const [size, setSize] = useState(300)
 
     const downloadQR = () => {
-        const svg = document.getElementById("qr-code-svg")
-        if (!svg) return
+        const canvas = document.getElementById("qr-code-canvas") as HTMLCanvasElement
+        if (!canvas) return
 
-        const svgData = new XMLSerializer().serializeToString(svg)
-        const canvas = document.createElement("canvas")
-        const ctx = canvas.getContext("2d")
-        const img = new Image()
+        const pngFile = canvas.toDataURL("image/png")
 
-        canvas.width = size
-        canvas.height = size
-
-        img.onload = () => {
-            ctx?.drawImage(img, 0, 0)
-            const pngFile = canvas.toDataURL("image/png")
-
-            const downloadLink = document.createElement("a")
-            downloadLink.download = "qr-code-stef-epi.png"
-            downloadLink.href = pngFile
-            downloadLink.click()
-        }
-
-        img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)))
+        const downloadLink = document.createElement("a")
+        downloadLink.download = "qr-code-stef-epi.png"
+        downloadLink.href = pngFile
+        downloadLink.click()
     }
 
     return (
@@ -104,8 +91,8 @@ export default function QRGeneratorPage() {
                         </CardHeader>
                         <CardContent className="flex flex-col items-center justify-center p-8">
                             <div className="bg-white p-6 rounded-xl shadow-lg">
-                                <QRCodeSVG
-                                    id="qr-code-svg"
+                                <QRCodeCanvas
+                                    id="qr-code-canvas"
                                     value={url}
                                     size={size}
                                     level="H"
