@@ -2,6 +2,8 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { z } from "zod"
 import { authConfig } from "./auth.config"
+import { prisma } from "@/lib/prisma"
+import bcrypt from "bcryptjs"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig,
@@ -18,12 +20,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data
-                    // TODO: Replace with real database lookup or environment variable check
-                    // For now, hardcoded admin user for demonstration
-                    if (email === "admin@epi-manager.com" && password === "admin123") {
-                        return { id: "1", name: "Admin User", email: email }
+
+                    const user = await prisma.user.findUnique({
+                        where: { email }
+                    })
+
+                    if (!user) return null
+
+                    const passwordsMatch = await bcrypt.compare(password, user.password)
+
+                    if (passwordsMatch) {
+                        return {
+                            id: user.id,
+                            name: user.name,
+                            email: user.email,
+                            // Note: we can't easily add 'role' to the session without extending types,
+                            // but for now access is guarded by 'auth.config.ts' logic or we can add it later to JWT callback
+                        }
                     }
-                    return null
                 }
 
                 console.log("Invalid credentials")
