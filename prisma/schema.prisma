@@ -17,6 +17,7 @@ datasource db {
 model Request {
   id           String   @id @default(cuid())
   employeeName String
+  firstName    String?
   service      String
   reason       String   // Ex: "Usure", "Perte"
   status       String   @default("Pending") // Pending, Ordered, Delivered, Rejected

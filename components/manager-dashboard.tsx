@@ -303,7 +303,6 @@ export default function ManagerDashboard({
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard Manager</h1>
                     <p className="text-gray-500 dark:text-gray-400">Gestion des stocks et demandes d'EPI</p>
                 </div>
-                <ThemeToggle />
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
