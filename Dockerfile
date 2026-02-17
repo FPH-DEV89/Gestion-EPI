@@ -3,14 +3,13 @@ FROM node:20-slim AS deps
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json ./
 COPY prisma ./prisma
 
 # DATABASE_URL fictive pour que prisma generate fonctionne au build
 ENV DATABASE_URL="postgresql://fake:fake@localhost:5432/fake"
-# npm install (et non npm ci) pour résoudre les binaires natifs Linux
-# car le lock a été généré sous Windows
-RUN npm install --platform=linux --arch=x64
+# Pas de package-lock.json : on laisse npm résoudre les bonnes deps natives pour Linux
+RUN npm install
 
 # --- Étape de build ---
 FROM node:20-slim AS builder
