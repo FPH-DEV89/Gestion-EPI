@@ -29,6 +29,7 @@ export default async function AdminPage() {
             category: s.category,
             label: s.label,
             minThreshold: s.minThreshold,
+            price: s.price,
             stock: (s.stock as Record<string, number>) || {}
         }))
 
