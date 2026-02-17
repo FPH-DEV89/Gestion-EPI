@@ -22,10 +22,10 @@ async function main() {
 
     // 2. Vérification/Création des stocks de base
     const baseStocks = [
-        { category: 'CHAUSSURES', label: 'Chaussures de sécurité', minThreshold: 5, stock: { "40": 10, "41": 12, "42": 4, "43": 15, "44": 2 } },
-        { category: 'PANTALON', label: 'Pantalon de travail', minThreshold: 10, stock: { "S": 8, "M": 15, "L": 20, "XL": 5 } },
-        { category: 'VESTE', label: 'Veste haute visibilité', minThreshold: 5, stock: { "M": 10, "L": 5, "XL": 2 } },
-        { category: 'GANTS', label: 'Gants de protection', minThreshold: 20, stock: { "T9": 50, "T10": 15 } },
+        { category: 'CHAUSSURES', label: 'Chaussures de sécurité', minThreshold: 5, price: 42.50, stock: { "40": 10, "41": 12, "42": 4, "43": 15, "44": 2 } },
+        { category: 'PANTALON', label: 'Pantalon de travail', minThreshold: 10, price: 28.90, stock: { "S": 8, "M": 15, "L": 20, "XL": 5 } },
+        { category: 'VESTE', label: 'Veste haute visibilité', minThreshold: 5, price: 35.00, stock: { "M": 10, "L": 5, "XL": 2 } },
+        { category: 'GANTS', label: 'Gants de protection', minThreshold: 20, price: 4.25, stock: { "T9": 50, "T10": 15 } },
     ];
 
     for (const s of baseStocks) {

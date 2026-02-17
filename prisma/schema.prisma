@@ -15,32 +15,35 @@ datasource db {
 }
 
 model Request {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   employeeName String
   firstName    String?
   service      String
-  reason       String   // Ex: "Usure", "Perte"
-  status       String   @default("Pending") // Pending, Ordered, Delivered, Rejected
+  reason       String
+  status       String        @default("Pending") // Pending, Ordered, Rejected
   items        RequestItem[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model RequestItem {
-  id        String  @id @default(cuid())
-  requestId String
-  request   Request @relation(fields: [requestId], references: [id])
-  category  String
-  size      String
-  quantity  Int     @default(1)
+  id              String  @id @default(cuid())
+  requestId       String
+  request         Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  category        String
+  size            String
+  snapshottedPrice Float   @default(0) // Nouveau: Prix figé au moment du clic
+  quantity        Int     @default(1)
 }
 
 model StockItem {
   id           String   @id @default(cuid())
   category     String   @unique
-  label        String
-  minThreshold Int
+  label        String   @default("")
+  minThreshold Int      @default(5)
+  price        Float    @default(0)
   stock        Json     // Structure : {"42": 5, "43": 0, "M": 10}
+  createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
 

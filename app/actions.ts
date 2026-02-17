@@ -17,17 +17,27 @@ export async function createRequests(formData: {
         const { firstName, employeeName, service, items, reason } = formData;
         const fullName = `${firstName} ${employeeName}`;
 
+        // Récupérer les prix actuels du stock pour chaque item
+        const stockItems = await prisma.stockItem.findMany({
+            where: { category: { in: items.map(i => i.category) } }
+        });
+
         const request = await prisma.request.create({
             data: {
                 employeeName: fullName,
+                firstName,
                 service,
                 reason,
                 status: "Pending",
                 items: {
-                    create: items.map(item => ({
-                        category: item.category,
-                        size: item.size
-                    }))
+                    create: items.map(item => {
+                        const stockInfo = stockItems.find(s => s.category === item.category);
+                        return {
+                            category: item.category,
+                            size: item.size,
+                            snapshottedPrice: stockInfo?.price || 0
+                        };
+                    })
                 }
             },
             include: { items: true }
