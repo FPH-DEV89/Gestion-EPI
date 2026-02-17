@@ -9,19 +9,29 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Request {
   id           String   @id @default(cuid())
   employeeName String
   service      String
-  category     String   // Ex: "Shoes", "Gloves"
-  size         String   // Ex: "42", "M", "TU"
   reason       String   // Ex: "Usure", "Perte"
   status       String   @default("Pending") // Pending, Ordered, Delivered, Rejected
+  items        RequestItem[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model RequestItem {
+  id        String  @id @default(cuid())
+  requestId String
+  request   Request @relation(fields: [requestId], references: [id])
+  category  String
+  size      String
+  quantity  Int     @default(1)
 }
 
 model StockItem {
@@ -31,4 +41,14 @@ model StockItem {
   minThreshold Int
   stock        Json     // Structure : {"42": 5, "43": 0, "M": 10}
   updatedAt    DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("USER") // "ADMIN" or "USER"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
