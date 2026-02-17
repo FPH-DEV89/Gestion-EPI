@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=epi_user
+      - POSTGRES_PASSWORD=epi_password
+      - POSTGRES_DB=epi_test_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://epi_user:epi_password@db:5432/epi_test_db?sslmode=disable
+      - DIRECT_URL=postgresql://epi_user:epi_password@db:5432/epi_test_db?sslmode=disable
+      - AUTH_SECRET=secret-test-docker-123
+      - NEXTAUTH_URL=http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
