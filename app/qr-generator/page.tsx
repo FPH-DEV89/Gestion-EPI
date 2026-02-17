@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { QRCodeCanvas } from "qrcode.react"
+import { useState, useRef } from "react"
+import { QRCodeSVG } from "qrcode.react"
+import { toPng } from 'html-to-image'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,17 +11,20 @@ import { Download, QrCode } from "lucide-react"
 export default function QRGeneratorPage() {
     const [url, setUrl] = useState("https://votre-app.vercel.app")
     const [size, setSize] = useState(300)
+    const qrRef = useRef<HTMLDivElement>(null)
 
-    const downloadQR = () => {
-        const canvas = document.getElementById("qr-code-canvas") as HTMLCanvasElement
-        if (!canvas) return
+    const downloadQR = async () => {
+        if (!qrRef.current) return
 
-        const pngFile = canvas.toDataURL("image/png")
-
-        const downloadLink = document.createElement("a")
-        downloadLink.download = "qr-code-stef-epi.png"
-        downloadLink.href = pngFile
-        downloadLink.click()
+        try {
+            const dataUrl = await toPng(qrRef.current, { cacheBust: true, backgroundColor: 'white' })
+            const link = document.createElement('a')
+            link.download = 'qr-code-stef-epi.png'
+            link.href = dataUrl
+            link.click()
+        } catch (err) {
+            console.error('Erreur lors de la génération du QR code:', err)
+        }
     }
 
     return (
@@ -91,21 +95,23 @@ export default function QRGeneratorPage() {
                         </CardHeader>
                         <CardContent className="flex flex-col items-center justify-center p-8">
                             <div className="bg-white p-6 rounded-xl shadow-lg">
-                                <QRCodeCanvas
-                                    id="qr-code-canvas"
-                                    value={url}
-                                    size={size}
-                                    level="H"
-                                    includeMargin={true}
-                                    imageSettings={{
-                                        src: "/logo-stef.png",
-                                        x: undefined,
-                                        y: undefined,
-                                        height: size * 0.2,
-                                        width: size * 0.2,
-                                        excavate: true,
-                                    }}
-                                />
+                                {/* Container ref pour html-to-image */}
+                                <div ref={qrRef} className="bg-white p-2">
+                                    <QRCodeSVG
+                                        value={url}
+                                        size={size}
+                                        level="H"
+                                        includeMargin={true}
+                                        imageSettings={{
+                                            src: "/logo-stef.png",
+                                            x: undefined,
+                                            y: undefined,
+                                            height: size * 0.2,
+                                            width: size * 0.2,
+                                            excavate: true,
+                                        }}
+                                    />
+                                </div>
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
                                 Scannez ce QR code pour accéder à la demande d'EPI
