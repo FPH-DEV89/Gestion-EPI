@@ -10,6 +10,8 @@ COPY prisma ./prisma
 ENV DATABASE_URL="postgresql://fake:fake@localhost:5432/fake"
 # Pas de package-lock.json : on laisse npm résoudre les bonnes deps natives pour Linux
 RUN npm install
+# Force l'installation de Prisma CLI pour être sûr qu'il est dispo pour le generate
+RUN npm install prisma --save-dev
 
 # --- Étape de build ---
 FROM node:20-slim AS builder
@@ -20,7 +22,8 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://fake:fake@localhost:5432/fake"
-RUN npx prisma generate
+# Génération explicite avec chemin du schéma
+RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 # --- Étape d'exécution ---
