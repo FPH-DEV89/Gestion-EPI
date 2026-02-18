@@ -20,8 +20,8 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://fake:fake@localhost:5432/fake"
-# Utilisation directe du binaire local pour éviter les problèmes de version npx
-RUN ./node_modules/.bin/prisma generate --schema=./prisma/schema.prisma
+# Génération explicite avec chemin du schéma
+RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 # --- Étape d'exécution ---
