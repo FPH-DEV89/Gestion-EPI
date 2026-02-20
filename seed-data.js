@@ -12,7 +12,7 @@ async function main() {
   // Create stock items with various sizes
   const stockItems = [
     {
-      category: 'Shoes',
+      category: 'CHAUSSURES',
       label: 'Chaussures de sécurité',
       minThreshold: 3,
       stock: {
@@ -28,7 +28,7 @@ async function main() {
       }
     },
     {
-      category: 'Gloves',
+      category: 'GANTS',
       label: 'Gants de protection',
       minThreshold: 10,
       stock: {
@@ -41,7 +41,7 @@ async function main() {
       }
     },
     {
-      category: 'Jackets',
+      category: 'VESTE',
       label: 'Vestes de travail',
       minThreshold: 5,
       stock: {
@@ -54,7 +54,7 @@ async function main() {
       }
     },
     {
-      category: 'Helmets',
+      category: 'CASQUE',
       label: 'Casques de sécurité',
       minThreshold: 5,
       stock: {
