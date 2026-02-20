@@ -150,8 +150,8 @@ export default function ManagerDashboard({
     const [activeTab, setActiveTab] = useState("requests")
     const router = useRouter()
     const { toast } = useToast()
-    // Auth is now handled by the proxy middleware
-    const isAuthorized = true
+    // Auth is handled by the parent AdminPage and middleware
+    const isAuthorized = !!userRole
 
     if (!isAuthorized) return null
 
