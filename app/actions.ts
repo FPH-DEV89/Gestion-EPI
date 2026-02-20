@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 
 export async function createRequests(formData: {
     employeeName: string;
@@ -66,8 +67,23 @@ export async function createRequest(formData: {
     });
 }
 
+async function recordAuditLog(tx: Prisma.TransactionClient, userId: string, action: string, details: any) {
+    await tx.auditLog.create({
+        data: {
+            userId,
+            action,
+            details: details || {}
+        }
+    });
+}
+
 export async function validateRequest(requestId: string) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: "Vous devez être connecté pour valider une demande" };
+        }
+
         const request = await prisma.request.findUnique({
             where: { id: requestId },
             include: { items: true }
@@ -91,7 +107,6 @@ export async function validateRequest(requestId: string) {
             }
         }
 
-        // Decrement stock for all items
         await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             for (const item of request.items) {
                 const stockItem = await tx.stockItem.findFirst({
@@ -111,7 +126,17 @@ export async function validateRequest(requestId: string) {
 
             await tx.request.update({
                 where: { id: requestId },
-                data: { status: "Ordered" },
+                data: {
+                    status: "Ordered",
+                    validatedById: session.user.id,
+                    validatedAt: new Date()
+                },
+            });
+
+            await recordAuditLog(tx, session.user.id as string, "VALIDATE_REQUEST", {
+                requestId,
+                employeeName: request.employeeName,
+                items: request.items.map(i => ({ category: i.category, size: i.size }))
             });
         });
 
@@ -126,10 +151,27 @@ export async function validateRequest(requestId: string) {
 
 export async function rejectRequest(requestId: string) {
     try {
-        await prisma.request.update({
-            where: { id: requestId },
-            data: { status: "Rejected" },
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: "Vous devez être connecté pour rejeter une demande" };
+        }
+
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const request = await tx.request.update({
+                where: { id: requestId },
+                data: {
+                    status: "Rejected",
+                    validatedById: session.user.id,
+                    validatedAt: new Date()
+                },
+            });
+
+            await recordAuditLog(tx, session.user.id as string, "REJECT_REQUEST", {
+                requestId,
+                employeeName: request.employeeName
+            });
         });
+
         revalidatePath("/");
         revalidatePath("/admin");
         return { success: true };
@@ -140,19 +182,38 @@ export async function rejectRequest(requestId: string) {
 
 export async function updateStock(categoryId: string, size: string, quantity: number) {
     try {
-        const stockItem = await prisma.stockItem.findUnique({
-            where: { id: categoryId },
+        const session = await auth();
+        if (!session?.user?.id) {
+            return { success: false, error: "Vous devez être connecté pour modifier le stock" };
+        }
+
+        const success = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const stockItem = await tx.stockItem.findUnique({
+                where: { id: categoryId },
+            });
+
+            if (!stockItem) return null;
+
+            const stock = (stockItem.stock as Record<string, number>) || {};
+            const oldQuantity = stock[size] || 0;
+            const newStock = { ...stock, [size]: quantity };
+
+            await tx.stockItem.update({
+                where: { id: categoryId },
+                data: { stock: newStock },
+            });
+
+            await recordAuditLog(tx, session.user.id as string, "UPDATE_STOCK", {
+                category: stockItem.category,
+                size,
+                oldQuantity,
+                newQuantity: quantity
+            });
+
+            return true;
         });
 
-        if (!stockItem) return { success: false, error: "Équipement introuvable" };
-
-        const stock = (stockItem.stock as Record<string, number>) || {};
-        const newStock = { ...stock, [size]: quantity };
-
-        await prisma.stockItem.update({
-            where: { id: categoryId },
-            data: { stock: newStock },
-        });
+        if (!success) return { success: false, error: "Équipement introuvable" };
 
         revalidatePath("/");
         revalidatePath("/admin");

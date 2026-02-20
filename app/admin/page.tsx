@@ -1,16 +1,36 @@
 import { prisma } from "@/lib/prisma"
 import ManagerDashboard from "@/components/manager-dashboard"
+import { auth } from "@/auth"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminPage() {
     try {
-        const [requests, stock] = await Promise.all([
+        const session = await auth()
+        const userRole = (session?.user as any)?.role || "USER"
+
+        const [requests, stock, auditLogs] = await Promise.all([
             prisma.request.findMany({
                 orderBy: { createdAt: 'desc' },
-                include: { items: true }
+                include: {
+                    items: true,
+                    validatedBy: {
+                        select: { name: true }
+                    }
+                }
             }),
-            prisma.stockItem.findMany({ orderBy: { label: 'asc' } })
+            prisma.stockItem.findMany({ orderBy: { label: 'asc' } }),
+            userRole === "ADMIN"
+                ? prisma.auditLog.findMany({
+                    orderBy: { createdAt: 'desc' },
+                    take: 50,
+                    include: {
+                        user: {
+                            select: { name: true }
+                        }
+                    }
+                })
+                : Promise.resolve([])
         ])
 
         // Serialize Date objects to ISO strings for Client Component
@@ -21,7 +41,9 @@ export default async function AdminPage() {
             items: r.items,
             reason: r.reason,
             status: r.status,
-            createdAt: r.createdAt.toISOString()
+            createdAt: r.createdAt.toISOString(),
+            validatedBy: r.validatedBy?.name || null,
+            validatedAt: r.validatedAt ? r.validatedAt.toISOString() : null
         }))
 
         const serializedStock = stock.map(s => ({
@@ -33,11 +55,21 @@ export default async function AdminPage() {
             stock: (s.stock as Record<string, number>) || {}
         }))
 
+        const serializedAuditLogs = auditLogs.map(log => ({
+            id: log.id,
+            userName: log.user.name || "Inconnu",
+            action: log.action,
+            details: log.details,
+            createdAt: log.createdAt.toISOString()
+        }))
+
         return (
             <main className="min-h-screen bg-background">
                 <ManagerDashboard
                     initialRequests={serializedRequests}
                     initialStock={serializedStock}
+                    initialAuditLogs={serializedAuditLogs}
+                    userRole={userRole}
                 />
             </main>
         )
