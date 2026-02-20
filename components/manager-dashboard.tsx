@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { validateRequest, rejectRequest, updateStock } from "@/app/actions"
 import { sortSizes } from "@/lib/utils"
-import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3 } from "lucide-react"
+import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3, ShieldAlert } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
 import { useToast } from "@/components/ui/use-toast"
@@ -51,6 +51,8 @@ interface Request {
     reason: string
     status: string
     createdAt: string
+    validatedBy: string | null
+    validatedAt: string | null
 }
 
 interface StockItem {
@@ -62,12 +64,24 @@ interface StockItem {
     stock: Record<string, number>
 }
 
+interface AuditLog {
+    id: string
+    userName: string
+    action: string
+    details: any
+    createdAt: string
+}
+
 export default function ManagerDashboard({
     initialRequests,
-    initialStock
+    initialStock,
+    initialAuditLogs = [],
+    userRole = "USER"
 }: {
     initialRequests: Request[],
-    initialStock: StockItem[]
+    initialStock: StockItem[],
+    initialAuditLogs?: AuditLog[],
+    userRole?: string
 }) {
     const [requests, setRequests] = useState(initialRequests)
     const [stock, setStock] = useState(initialStock)
@@ -326,6 +340,11 @@ export default function ManagerDashboard({
                     <TabsTrigger value="statistics" className="data-[state=active]:text-brand">
                         <BarChart3 className="w-4 h-4 mr-2" /> Statistiques
                     </TabsTrigger>
+                    {userRole === "ADMIN" && (
+                        <TabsTrigger value="audit" className="data-[state=active]:text-blue-600">
+                            <ShieldAlert className="w-4 h-4 mr-2" /> Audit
+                        </TabsTrigger>
+                    )}
                 </TabsList>
 
                 <TabsContent value="requests">
@@ -473,7 +492,7 @@ export default function ManagerDashboard({
                                         <TableHead>Équipement</TableHead>
                                         <TableHead>Taille</TableHead>
                                         <TableHead>Coût</TableHead>
-                                        <TableHead>Statut</TableHead>
+                                        <TableHead>Statut & Traitement</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -502,10 +521,18 @@ export default function ManagerDashboard({
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge className={`text-[10px] font-black uppercase tracking-widest ${req.status === "Ordered" ? "bg-green-100 text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"
-                                                    }`}>
-                                                    {req.status === "Ordered" ? "Validé" : "Refusé"}
-                                                </Badge>
+                                                <div className="flex flex-col gap-1">
+                                                    <Badge className={`w-fit text-[10px] font-black uppercase tracking-widest ${req.status === "Ordered" ? "bg-green-100 text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"
+                                                        }`}>
+                                                        {req.status === "Ordered" ? "Validé" : "Refusé"}
+                                                    </Badge>
+                                                    {req.validatedBy && (
+                                                        <div className="text-[9px] text-gray-500 italic">
+                                                            Par {req.validatedBy}
+                                                            {req.validatedAt && ` le ${new Date(req.validatedAt).toLocaleDateString("fr-FR")}`}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -705,6 +732,58 @@ export default function ManagerDashboard({
                 <TabsContent value="statistics">
                     <StatisticsDashboard requests={requests} showHeader={false} />
                 </TabsContent>
+
+                {userRole === "ADMIN" && (
+                    <TabsContent value="audit">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Journal d'Audit - Super Admin</CardTitle>
+                                <CardDescription>Tracé complet des actions effectuées sur la plateforme.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date & Heure</TableHead>
+                                            <TableHead>Utilisateur</TableHead>
+                                            <TableHead>Action</TableHead>
+                                            <TableHead>Détails</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {initialAuditLogs.map(log => (
+                                            <TableRow key={log.id}>
+                                                <TableCell className="text-xs font-mono">
+                                                    {new Date(log.createdAt).toLocaleString("fr-FR")}
+                                                </TableCell>
+                                                <TableCell className="font-medium text-sm">
+                                                    {log.userName}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-tighter">
+                                                        {log.action}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-[10px] text-gray-500 max-w-[300px] truncate">
+                                                    {log.action === "VALIDATE_REQUEST" && `Validé : ${log.details.employeeName}`}
+                                                    {log.action === "REJECT_REQUEST" && `Refusé : ${log.details.employeeName}`}
+                                                    {log.action === "UPDATE_STOCK" && `Stock mod. : ${log.details.category} (${log.details.size}) ${log.details.oldQuantity} -> ${log.details.newQuantity}`}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {initialAuditLogs.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="h-64 text-center text-gray-400 italic">
+                                                    Aucune action enregistrée pour le moment.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                )}
 
             </Tabs>
         </div>

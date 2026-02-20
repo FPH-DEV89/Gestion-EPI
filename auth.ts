@@ -34,8 +34,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             id: user.id,
                             name: user.name,
                             email: user.email,
-                            // Note: we can't easily add 'role' to the session without extending types,
-                            // but for now access is guarded by 'auth.config.ts' logic or we can add it later to JWT callback
+                            role: user.role,
                         }
                     }
                 }
@@ -45,4 +44,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
         }),
     ],
+    callbacks: {
+        async jwt({ token, user }) {
+            if (user) {
+                token.role = (user as any).role
+                token.id = user.id
+            }
+            return token
+        },
+        async session({ session, token }) {
+            if (session.user) {
+                (session.user as any).role = token.role
+                    (session.user as any).id = token.id as string
+            }
+            return session
+        },
+    },
 })

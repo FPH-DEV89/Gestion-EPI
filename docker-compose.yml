@@ -20,10 +20,10 @@ services:
       - DATABASE_URL=postgresql://epi_user:epi_password@db:5432/epi_test_db?sslmode=disable
       - DIRECT_URL=postgresql://epi_user:epi_password@db:5432/epi_test_db?sslmode=disable
       - AUTH_SECRET=secret-test-docker-123
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=http://localhost:3003
       - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
     ports:
-      - "3000:3000"
+      - "3003:3000"
     depends_on:
       - db
 

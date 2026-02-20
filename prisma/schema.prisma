@@ -22,6 +22,12 @@ model Request {
   reason       String
   status       String        @default("Pending") // Pending, Ordered, Rejected
   items        RequestItem[]
+  
+  // Validation tracking
+  validatedById String?
+  validatedBy   User?         @relation("Validator", fields: [validatedById], references: [id])
+  validatedAt   DateTime?
+
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -48,11 +54,24 @@ model StockItem {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   password  String
   name      String?
-  role      String   @default("USER") // "ADMIN" or "USER"
+  role      String    @default("USER") // "ADMIN" (Super Admin) or "USER" (Manager)
+  
+  validatedRequests Request[] @relation("Validator")
+  auditLogs         AuditLog[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String   // e.g., "VALIDATE_REQUEST", "REJECT_REQUEST", "UPDATE_STOCK"
+  details   Json?    // Specific details about the action
+  createdAt DateTime @default(now())
 }
