@@ -9,6 +9,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cart
 interface RequestItem {
     category: string
     size: string
+    snapshottedPrice: number
 }
 
 interface Request {
@@ -103,7 +104,27 @@ export default function StatisticsDashboard({
             )}
 
             {/* KPIs Section */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <Card className="border-l-4 border-l-brand">
+                    <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-brand/10 rounded-lg">
+                                    <TrendingUp className="w-6 h-6 text-brand" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">Budget</p>
+                                    <p className="text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+                                        {orderedRequests.reduce((total, req) =>
+                                            total + req.items.reduce((sum, item) => sum + (item.snapshottedPrice || 0), 0)
+                                            , 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card className="border-l-4 border-l-blue-500">
                     <CardContent className="pt-6">
                         <div className="flex items-start justify-between">
@@ -113,12 +134,9 @@ export default function StatisticsDashboard({
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">EPI Distribués</p>
-                                    <p className="text-3xl font-bold text-gray-900">{totalEPI}</p>
+                                    <p className="text-2xl lg:text-3xl font-bold text-gray-900">{totalEPI}</p>
                                 </div>
                             </div>
-                            <Badge className="bg-green-100 text-green-700 border-green-200">
-                                <TrendingUp className="w-3 h-3 mr-1" /> +12%
-                            </Badge>
                         </div>
                     </CardContent>
                 </Card>
@@ -131,13 +149,10 @@ export default function StatisticsDashboard({
                                     <CheckCircle className="w-6 h-6 text-green-600" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Taux Validation</p>
-                                    <p className="text-3xl font-bold text-gray-900">{validationRate}%</p>
+                                    <p className="text-sm text-gray-500">Validation</p>
+                                    <p className="text-2xl lg:text-3xl font-bold text-gray-900">{validationRate}%</p>
                                 </div>
                             </div>
-                            <Badge className="bg-green-100 text-green-700 border-green-200">
-                                <TrendingUp className="w-3 h-3 mr-1" /> +3%
-                            </Badge>
                         </div>
                     </CardContent>
                 </Card>
@@ -150,8 +165,8 @@ export default function StatisticsDashboard({
                                     <Building2 className="w-6 h-6 text-purple-600" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Services Actifs</p>
-                                    <p className="text-3xl font-bold text-gray-900">{activeServices}</p>
+                                    <p className="text-sm text-gray-500">Actifs</p>
+                                    <p className="text-2xl lg:text-3xl font-bold text-gray-900">{activeServices}</p>
                                 </div>
                             </div>
                         </div>
@@ -166,13 +181,10 @@ export default function StatisticsDashboard({
                                     <Clock className="w-6 h-6 text-orange-600" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500">Délai Moyen</p>
-                                    <p className="text-3xl font-bold text-gray-900">{avgDelay}</p>
+                                    <p className="text-sm text-gray-500">Délai</p>
+                                    <p className="text-2xl lg:text-3xl font-bold text-gray-900">{avgDelay}</p>
                                 </div>
                             </div>
-                            <Badge className="bg-green-100 text-green-700 border-green-200">
-                                <TrendingDown className="w-3 h-3 mr-1" /> -0.5j
-                            </Badge>
                         </div>
                     </CardContent>
                 </Card>
