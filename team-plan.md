@@ -1,12 +1,10 @@
 # Epi Manager - Plan d'Équipe (Team Plan)
 
 > [!NOTE]
-> Ce document est le gardien de la vision stratégique et de l'excellence technique du projet.
+> Ce document est le gardien de la vision stratégique et de l'excellence technique du projet. Suivant les directives du Chef (Director of Engineering & Product).
 
-## 🎯 Vision & Ambition
-Reprise et extension du projet Epi Manager.
-- **Style** : Conservation du thème existant (Brand Blue #004B9B).
-- **Qualité** : Excellence technique imposée (Next.js 16, Tailwind 4, Prisma).
+## 🎯 Vision & Ambition (Chef's Directive)
+L'objectif est de transformer Epi Manager d'un simple outil de gestion interne en un SaaS "World Class". L'interface doit être fluide, sécurisée (Zéro Faille), et l'expérience utilisateur doit être "State of the Art". Le retour d'expérience (`GLOBAL_RETROSPECTIVE.md`) est notre bible. Pas de régressions tolérées.
 
 ## 🛠️ Stack Technique
 - **Framework** : Next.js 16.1.6
@@ -15,24 +13,26 @@ Reprise et extension du projet Epi Manager.
 - **Authentification** : NextAuth v5 (Beta)
 - **Tests** : Vitest
 
-## 📋 Tâches par Expert
-### 🛡️ Chef (Head of Engineering)
-- [ ] Coordination du déploiement VPS.
-- [ ] Validation du plan stratégique.
-- [ ] Revue de la `GLOBAL_RETROSPECTIVE.md`.
+## 📋 Tâches par Expert (Assignées par le Chef)
+
+### 🛡️ Expert Sécurité & Back-End
+- [ ] **Correction de Faille Critique (Dashboard)** : Retirer `const isAuthorized = !!userRole;` (forcé à true) dans `manager-dashboard.tsx`. L'autorisation doit être stricte (`userRole === "ADMIN"`).
+- [ ] **Sécurisation des Server Actions** : Verrouiller `validateRequest`, `rejectRequest`, et `updateStock` dans `app/actions.ts` pour qu'elles valident explicitement que `session.user.role === "ADMIN"`.
+- [ ] **Audit DB** : Ajouter des index sur `AuditLog(userId, createdAt)` pour garantir la performance à l'échelle.
 
 ### 💻 Front-End & Design
-- [ ] Maintenance du thème existant.
-- [ ] Implémentation des nouvelles interfaces (à définir).
+- [ ] Maintien de l'esthétique "Premium" (Terracotta/Sage).
+- [ ] Garantir que les Skeletons (mentionnés dans la rétrospective) sont implémentés partout où des requêtes de données sont faites. Zéro "Layout Shift" autorisé.
 
-### ⚙️ Back-End & Database
-- [ ] Ajout des nouveaux modèles Prisma (si nécessaire).
-- [ ] Implémentation des Server Actions pour les nouvelles fonctions.
+### 👨‍💻 Chef (Head of Engineering)
+- [x] Profil d'admin super-user créé (`florian.philibert@stef.com`).
+- [x] Audit global complété.
+- [ ] Supervision de l'exécution des correctifs de sécurité ci-dessus.
 
-## 🚀 Roadmap
-1.  **Phase 1** : Accès VPS et synchronisation.
-2.  **Phase 2** : Implémentation des nouvelles fonctions prioritaires.
-3.  **Phase 3** : Tests et mise en production.
+## 🚀 Roadmap V2.1
+1.  **Phase 1 (Immédiate)** : Correctifs de Sécurité (Dashboard & Server Actions).
+2.  **Phase 2** : Refonte de la logique de permission (Role-Based Access Control strict).
+3.  **Phase 3** : Déploiement "Zero Downtime" sur Vercel.
 
 ---
-*Dernière mise à jour : 19/02/2026*
+*Dernière mise à jour : 27/02/2026 par le Chef*

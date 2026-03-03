@@ -80,8 +80,8 @@ async function recordAuditLog(tx: Prisma.TransactionClient, userId: string, acti
 export async function validateRequest(requestId: string) {
     try {
         const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Vous devez être connecté pour valider une demande" };
+        if (!session?.user?.id || (session.user as any).role !== "ADMIN") {
+            return { success: false, error: "Non autorisé. Accès administrateur requis." };
         }
 
         const request = await prisma.request.findUnique({
@@ -152,8 +152,8 @@ export async function validateRequest(requestId: string) {
 export async function rejectRequest(requestId: string) {
     try {
         const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Vous devez être connecté pour rejeter une demande" };
+        if (!session?.user?.id || (session.user as any).role !== "ADMIN") {
+            return { success: false, error: "Non autorisé. Accès administrateur requis." };
         }
 
         await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -183,8 +183,8 @@ export async function rejectRequest(requestId: string) {
 export async function updateStock(categoryId: string, size: string, quantity: number) {
     try {
         const session = await auth();
-        if (!session?.user?.id) {
-            return { success: false, error: "Vous devez être connecté pour modifier le stock" };
+        if (!session?.user?.id || (session.user as any).role !== "ADMIN") {
+            return { success: false, error: "Non autorisé. Accès administrateur requis." };
         }
 
         const success = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
