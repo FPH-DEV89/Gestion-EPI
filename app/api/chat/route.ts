@@ -1,4 +1,4 @@
-import { google } from '@ai-sdk/google';
+import { xai } from '@ai-sdk/xai';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
 
     const result = streamText({
-        model: google('gemini-1.5-pro'),
+        model: xai('grok-2-latest'),
         system: `Tu es un assistant expert en logistique pour EPI Manager.
 Ton rôle est d'aider le manager à visualiser l'état du stock et les demandes.
 Tu as accès à des outils pour lire la base de données.
