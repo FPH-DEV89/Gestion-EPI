@@ -75,4 +75,6 @@ model AuditLog {
   action    String   // e.g., "VALIDATE_REQUEST", "REJECT_REQUEST", "UPDATE_STOCK"
   details   Json?    // Specific details about the action
   createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
