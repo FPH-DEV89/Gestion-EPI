@@ -150,8 +150,8 @@ export default function ManagerDashboard({
     const [activeTab, setActiveTab] = useState("requests")
     const router = useRouter()
     const { toast } = useToast()
-    // Auth is handled by the parent AdminPage and middleware
-    const isAuthorized = !!userRole
+    // Auth is handled by the parent AdminPage and middleware, but we enforce ADMIN role rigorously here.
+    const isAuthorized = userRole === "ADMIN"
 
     if (!isAuthorized) return null
 

@@ -17,21 +17,25 @@ async function main() {
     const hashedPassword = await bcrypt.hash(password, 10)
 
     try {
-        const user = await prisma.user.create({
-            data: {
+        const user = await prisma.user.upsert({
+            where: {
+                email: email,
+            },
+            update: {
+                password: hashedPassword,
+                role,
+                name,
+            },
+            create: {
                 email,
                 password: hashedPassword,
                 role,
                 name,
             },
         })
-        console.log(`✅ Utilisateur créé : ${user.email} (${user.role}) - Mot de passe : ${password}`)
+        console.log(`✅ Utilisateur mis à jour/créé : ${user.email} (${user.role}) - Mot de passe : ${password}`)
     } catch (e) {
-        if (e.code === 'P2002') {
-            console.error('❌ Cet email existe déjà.')
-        } else {
-            console.error(e)
-        }
+        console.error(e)
     } finally {
         await prisma.$disconnect()
     }
