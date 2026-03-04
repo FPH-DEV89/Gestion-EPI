@@ -8,9 +8,16 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
     const { messages } = await req.json();
+    console.log('INCOMING MESSAGES:', JSON.stringify(messages, null, 2));
 
     console.log('XAI KEY PREFIX:', process.env.XAI_API_KEY?.substring(0, 10));
     console.log('XAI KEY LENGTH:', process.env.XAI_API_KEY?.length);
+
+    // Clean up frontend metadata to strictly match CoreMessage schema
+    const coreMessages = messages.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content || ''
+    }));
 
     const result = streamText({
         model: xai('grok-3'),
@@ -19,7 +26,7 @@ Ton rôle est d'aider le manager à visualiser l'état du stock et les demandes.
 Tu as accès à des outils pour lire la base de données.
 Réponds de manière concise, précise et professionnelle.
 Si on te demande une action que tu ne peux pas faire (modifier stock), explique que tu n'as que la lecture pour l'instant.`,
-        messages,
+        messages: coreMessages,
         tools: {
             getStock: tool({
                 description: 'Obtenir la liste des articles en stock avec leurs quantités détaillées par taille.',
