@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
 
     const result = streamText({
-        model: xai('grok-2-latest'),
+        model: xai('grok-2'),
         system: `Tu es un assistant expert en logistique pour EPI Manager.
 Ton rôle est d'aider le manager à visualiser l'état du stock et les demandes.
 Tu as accès à des outils pour lire la base de données.
@@ -74,9 +74,11 @@ Si on te demande une action que tu ne peux pas faire (modifier stock), explique 
 
     console.log("METHODS:", Object.keys(result));
 
-    // Fallback to text if data stream doesn't exist
+    // Support all AI SDK stream text response versions
     if ((result as any).toDataStreamResponse) {
         return (result as any).toDataStreamResponse();
+    } else if ((result as any).toUIMessageStreamResponse) {
+        return (result as any).toUIMessageStreamResponse();
     } else if ((result as any).toTextStreamResponse) {
         return (result as any).toTextStreamResponse();
     }
