@@ -72,5 +72,14 @@ Si on te demande une action que tu ne peux pas faire (modifier stock), explique 
         maxSteps: 5,
     });
 
-    return result.toDataStreamResponse();
+    console.log("METHODS:", Object.keys(result));
+
+    // Fallback to text if data stream doesn't exist
+    if ((result as any).toDataStreamResponse) {
+        return (result as any).toDataStreamResponse();
+    } else if ((result as any).toTextStreamResponse) {
+        return (result as any).toTextStreamResponse();
+    }
+
+    return new Response('No valid response stream format found', { status: 500 });
 }
