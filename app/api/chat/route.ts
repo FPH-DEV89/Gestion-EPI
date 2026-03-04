@@ -9,8 +9,11 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
     const { messages } = await req.json();
 
+    console.log('XAI KEY PREFIX:', process.env.XAI_API_KEY?.substring(0, 10));
+    console.log('XAI KEY LENGTH:', process.env.XAI_API_KEY?.length);
+
     const result = streamText({
-        model: xai('grok-2'),
+        model: xai('grok-3'),
         system: `Tu es un assistant expert en logistique pour EPI Manager.
 Ton rôle est d'aider le manager à visualiser l'état du stock et les demandes.
 Tu as accès à des outils pour lire la base de données.
@@ -69,7 +72,6 @@ Si on te demande une action que tu ne peux pas faire (modifier stock), explique 
                 },
             }),
         },
-        maxSteps: 5,
         onError: ({ error }) => {
             console.error('AI Stream Error:', error);
         }
