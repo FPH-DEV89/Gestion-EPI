@@ -28,13 +28,13 @@ async function main() {
 
     // Dummy employee info
     const employees = [
-        { name: "Alice Durant", service: "LOGISTIQUE" },
-        { name: "Jean Dupont", service: "MAINTENANCE" },
-        { name: "Marie Martin", service: "PRODUCTION" },
-        { name: "Luc Petit", service: "LOGISTIQUE" },
-        { name: "Sophie Leroy", service: "QUALITE" },
-        { name: "Pierre Dubois", service: "PRODUCTION" },
-        { name: "Julie Moreau", service: "MAINTENANCE" },
+        { name: "Alice Durant", service: "MAG" },
+        { name: "Jean Dupont", service: "TECHNIQUE" },
+        { name: "Marie Martin", service: "REA" },
+        { name: "Luc Petit", service: "RECEP" },
+        { name: "Sophie Leroy", service: "GDS" },
+        { name: "Pierre Dubois", service: "EXPE" },
+        { name: "Julie Moreau", service: "LAD" },
     ]
 
     const sizes = ["S", "M", "L", "XL", "42", "43", "44"]
