@@ -10,6 +10,7 @@ interface RequestItem {
     category: string
     size: string
     snapshottedPrice: number
+    quantity?: number
 }
 
 interface Request {
@@ -63,6 +64,18 @@ export default function StatisticsDashboard({
     const topEPIData = Object.entries(epiCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
+        .map(([name, value]) => ({ name, value }))
+
+    // Cost per EPI Data
+    const epiCosts = orderedRequests.reduce((acc: Record<string, number>, r) => {
+        r.items.forEach(item => {
+            acc[item.category] = (acc[item.category] || 0) + ((item.snapshottedPrice || 0) * (item.quantity || 1))
+        })
+        return acc
+    }, {})
+
+    const costEPIData = Object.entries(epiCosts)
+        .sort((a, b) => b[1] - a[1])
         .map(([name, value]) => ({ name, value }))
 
     const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899']
@@ -191,7 +204,7 @@ export default function StatisticsDashboard({
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Donut Chart - Top 5 EPI */}
                 <Card>
                     <CardHeader>
@@ -243,6 +256,31 @@ export default function StatisticsDashboard({
                                     <YAxis dataKey="service" type="category" width={100} />
                                     <Tooltip />
                                     <Bar dataKey="count" fill="#3b82f6" radius={[0, 8, 8, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-[300px] flex items-center justify-center text-gray-400">
+                                Aucune donnée disponible
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Bar Chart - Cost per EPI */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Dépenses par EPI</CardTitle>
+                        <CardDescription>Coût total par équipement</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {costEPIData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={costEPIData} layout="vertical" margin={{ left: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis type="number" tickFormatter={(value) => `${value}€`} />
+                                    <YAxis dataKey="name" type="category" width={80} />
+                                    <Tooltip formatter={(value: number) => `${value.toFixed(2)}€`} />
+                                    <Bar dataKey="value" fill="#10b981" radius={[0, 8, 8, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
