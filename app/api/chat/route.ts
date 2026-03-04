@@ -70,6 +70,9 @@ Si on te demande une action que tu ne peux pas faire (modifier stock), explique 
             }),
         },
         maxSteps: 5,
+        onError: ({ error }) => {
+            console.error('AI Stream Error:', error);
+        }
     });
 
     console.log("METHODS:", Object.keys(result));
