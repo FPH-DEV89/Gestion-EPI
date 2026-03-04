@@ -17,6 +17,8 @@ export function AdminChatWidget() {
     const sendMessage = (chatHelpers as any).sendMessage || (chatHelpers as any).append;
     const { messages = [], status, error } = chatHelpers;
 
+    console.log('FRONTEND MESSAGES:', JSON.stringify(messages, null, 2));
+
     const isLoading = status === 'submitted' || status === 'streaming';
 
     const handleCustomSubmit = async (e: React.FormEvent) => {
@@ -77,7 +79,14 @@ export function AdminChatWidget() {
                                         : 'bg-white text-slate-700 border border-slate-200 rounded-bl-none'
                                         }`}
                                 >
-                                    {m.content}
+                                    {m.parts ? m.parts.map((p: any, i: number) => {
+                                        if (p.type === 'text') {
+                                            return <span key={i}>{p.text}</span>;
+                                        } else if (p.type === 'tool-invocation') {
+                                            return <div key={i} className="text-xs italic text-blue-300">⚙️ Recherche en cours...</div>;
+                                        }
+                                        return null;
+                                    }) : (m as any).content}
                                 </div>
                             </div>
                         ))}
