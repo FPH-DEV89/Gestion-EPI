@@ -644,6 +644,9 @@ export default function ManagerDashboard({
                                                     {item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
                                                 </CardDescription>
                                                 <CardDescription>• {item.category}</CardDescription>
+                                                {Object.values(item.stock).some(q => q < item.minThreshold) && (
+                                                    <Badge className="bg-red-500 hover:bg-red-600 animate-pulse h-5 text-[9px] font-black uppercase tracking-tighter">Stock Bas</Badge>
+                                                )}
                                             </div>
                                         </div>
                                         {editingStockId === item.id ? (

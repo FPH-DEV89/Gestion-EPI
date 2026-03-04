@@ -80,10 +80,72 @@ export function AdminChatWidget() {
                                         }`}
                                 >
                                     {m.parts ? m.parts.map((p: any, i: number) => {
-                                        if (p.type === 'text') {
+                                        if (p.type === 'text' && p.text) {
                                             return <span key={i}>{p.text}</span>;
-                                        } else if (p.type === 'tool-invocation') {
-                                            return <div key={i} className="text-xs italic text-blue-300">⚙️ Recherche en cours...</div>;
+                                        }
+
+                                        // Handle tool invocations/results
+                                        // AI SDK v3 can use 'tool-invocation' or 'tool-{name}'
+                                        if (p.type === 'tool-invocation' || p.type.startsWith('tool-')) {
+                                            const inv = p.toolInvocation || p; // Sometimes the part itself has the data
+                                            const state = inv.state || (p.type.startsWith('tool-') ? 'output-available' : 'call');
+
+                                            // Handle all possible completed states
+                                            const isComplete = state === 'result' || state === 'output-available' || state === 'output';
+                                            const data = inv.result ?? inv.output ?? p.output ?? p.result;
+
+                                            if (isComplete && data) {
+                                                if (Array.isArray(data) && data.length > 0) {
+                                                    return (
+                                                        <div key={i} className="mt-2 space-y-1">
+                                                            <div className="text-xs font-semibold text-green-600 mb-1 flex items-center gap-1">
+                                                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                                                📦 Résultat :
+                                                            </div>
+                                                            {data.map((item: any, j: number) => (
+                                                                <div key={j} className="bg-slate-50 rounded-lg p-2 text-xs border border-slate-100 shadow-sm">
+                                                                    <div className="font-bold text-slate-800">{item.label || item.category}</div>
+                                                                    <div className="flex gap-2 mt-1">
+                                                                        {item.prixUnitaire && <div className="text-slate-500 italic">Prix : {item.prixUnitaire}</div>}
+                                                                    </div>
+                                                                    {item.stockParTaille && (
+                                                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                                                            {Object.entries(item.stockParTaille).map(([taille, qty]: any) => (
+                                                                                <div key={taille} className="flex flex-col items-center bg-blue-50 border border-blue-100 rounded px-2 py-0.5">
+                                                                                    <span className="text-[10px] text-blue-400 font-bold uppercase">{taille}</span>
+                                                                                    <span className="text-blue-700 font-bold">{qty}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                } else if (typeof data === 'object' && data !== null) {
+                                                    return (
+                                                        <div key={i} className="mt-2 bg-slate-50 rounded-lg p-2 text-xs border border-slate-100">
+                                                            {Object.entries(data).map(([k, v]: any) => (
+                                                                <div key={k} className="flex justify-between border-b border-slate-100 py-1 last:border-0">
+                                                                    <span className="font-semibold text-slate-600 capitalize">{k}:</span>
+                                                                    <span className="text-slate-800">{String(v)}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }
+
+                                            // Still in-progress or calling
+                                            if (state === 'call' || state === 'partial-call') {
+                                                return <div key={i} className="text-xs italic text-blue-400 flex items-center gap-1 mt-1">
+                                                    <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                                                    <span>Recherche en cours...</span>
+                                                </div>;
+                                            }
+
+                                            return null;
                                         }
                                         return null;
                                     }) : (m as any).content}
