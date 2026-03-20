@@ -66,8 +66,8 @@ async function main() {
       stock: buildStock(sizeXSto2XL, 15)
     },
     {
-      category: 'TOUR_DE_COUP',
-      label: 'Tour de coup',
+      category: 'TOUR_DE_COU',
+      label: 'Tour de cou',
       minThreshold: 5,
       price: 7.0,
       stock: buildStock(sizeTU)

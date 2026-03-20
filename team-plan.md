@@ -15,19 +15,25 @@ L'objectif est de transformer Epi Manager d'un simple outil de gestion interne e
 
 ## 📋 Tâches par Expert (Assignées par le Chef)
 
-### 🛡️ Expert Sécurité & Back-End
-- [ ] **Correction de Faille Critique (Dashboard)** : Retirer `const isAuthorized = !!userRole;` (forcé à true) dans `manager-dashboard.tsx`. L'autorisation doit être stricte (`userRole === "ADMIN"`).
-- [ ] **Sécurisation des Server Actions** : Verrouiller `validateRequest`, `rejectRequest`, et `updateStock` dans `app/actions.ts` pour qu'elles valident explicitement que `session.user.role === "ADMIN"`.
-- [ ] **Audit DB** : Ajouter des index sur `AuditLog(userId, createdAt)` pour garantir la performance à l'échelle.
+### 💻 Expert Front-End & Design
+- [ ] Suppression complète du mode sombre (`ThemeProvider`, `next-themes`, `tailwind.config.ts`).
+- [ ] Injection systématique du lien "Manager" dans la barre de navigation.
+- [ ] Maintien de l'esthétique "Premium" (Brand Blue / White).
+- [ ] Transformation PWA (Configuration `serwist/next`, création du `manifest.ts`).
+- [ ] Implémentation du Background Sync (Workbox) pour la persistance des actions hors ligne.
+- [ ] Intégration côté client des Web Push Notifications.
 
-### 💻 Front-End & Design
-- [ ] Maintien de l'esthétique "Premium" (Terracotta/Sage).
-- [ ] Garantir que les Skeletons (mentionnés dans la rétrospective) sont implémentés partout où des requêtes de données sont faites. Zéro "Layout Shift" autorisé.
+### 🤖 Expert IA & Data
+- [ ] Affinage du System Prompt du Chatbot pour forcer des réponses ultra-concises.
+- [ ] Optimisation de l'outil `getStock` pour qu'il ne retourne que le stock demandé.
+- [ ] Ajout d'une table `PushSubscription` dans le schéma Prisma pour la gestion des notifications.
 
 ### 👨‍💻 Chef (Head of Engineering)
 - [x] Profil d'admin super-user créé (`florian.philibert@stef.com`).
 - [x] Audit global complété.
-- [ ] Supervision de l'exécution des correctifs de sécurité ci-dessus.
+- [ ] Revue globale du code avant les tests locaux exclusifs. Pas de déploiement en prod sans validation stricte.
+- [x] Validation de l'ambition PWA avec le client (Offline Sync, Push validés).
+- [ ] Génération de l'image de la PWA (Logo premium).
 
 ## 🚀 Roadmap V2.1
 1.  **Phase 1 (Immédiate)** : Correctifs de Sécurité (Dashboard & Server Actions).
