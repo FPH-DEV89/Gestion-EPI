@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { validateRequest, rejectRequest, updateStock } from "@/app/actions"
 import { sortSizes } from "@/lib/utils"
-import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3, ShieldAlert } from "lucide-react"
+import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3, ShieldAlert, Users } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
 import { useToast } from "@/components/ui/use-toast"
@@ -334,6 +334,9 @@ export default function ManagerDashboard({
                     <TabsTrigger value="history" className="data-[state=active]:text-brand">
                         <History className="w-4 h-4 mr-2" /> Historique
                     </TabsTrigger>
+                    <TabsTrigger value="employees" className="data-[state=active]:text-brand">
+                        <Users className="w-4 h-4 mr-2" /> Collaborateurs
+                    </TabsTrigger>
                     <TabsTrigger value="inventory" className="data-[state=active]:text-brand">
                         <Package className="w-4 h-4 mr-2" /> Inventaire
                     </TabsTrigger>
@@ -590,6 +593,71 @@ export default function ManagerDashboard({
                     </Card>
                 </TabsContent>
 
+
+
+                <TabsContent value="employees">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Suivi par Collaborateur</CardTitle>
+                            <CardDescription>Vue d'ensemble des EPI distribués pour chaque employé.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Collaborateur</TableHead>
+                                        <TableHead>Service</TableHead>
+                                        <TableHead>Total EPI</TableHead>
+                                        <TableHead>Détail des équipements</TableHead>
+                                        <TableHead className="text-right">Coût Total</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {Object.values(requests.filter(r => r.status === "Ordered").reduce((acc: any, req) => {
+                                        if (!acc[req.employeeName]) {
+                                            acc[req.employeeName] = { 
+                                                name: req.employeeName, 
+                                                service: req.service, 
+                                                totalItems: 0, 
+                                                totalCost: 0, 
+                                                items: [] as string[] 
+                                            }
+                                        }
+                                        req.items.forEach(item => {
+                                            acc[req.employeeName].totalItems += 1
+                                            acc[req.employeeName].totalCost += item.snapshottedPrice
+                                            acc[req.employeeName].items.push(`${item.category} (${item.size})`)
+                                        })
+                                        return acc
+                                    }, {})).sort((a: any, b: any) => b.totalItems - a.totalItems).map((emp: any) => (
+                                        <TableRow key={emp.name}>
+                                            <TableCell className="font-medium">{emp.name}</TableCell>
+                                            <TableCell><Badge variant="outline" className="text-[10px]">{emp.service}</Badge></TableCell>
+                                            <TableCell className="font-bold text-lg">{emp.totalItems}</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {Array.from(new Set(emp.items)).map((i: any, idx) => (
+                                                        <Badge key={idx} variant="secondary" className="text-[10px] line-clamp-1">{i}</Badge>
+                                                    ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono font-bold text-brand">
+                                                {emp.totalCost.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {requests.filter(r => r.status === "Ordered").length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="h-64 text-center text-gray-500">
+                                                Aucune donnée disponible.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
 
                 <TabsContent value="inventory" className="space-y-6">

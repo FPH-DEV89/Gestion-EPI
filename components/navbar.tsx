@@ -10,12 +10,8 @@ export default async function Navbar() {
 
     const navItems = [
         { label: "Employé", href: "/" },
+        { label: "Manager", href: "/admin" }
     ]
-
-    // Only add Manager link if user is explicitly an ADMIN
-    if (userRole === "ADMIN") {
-        navItems.push({ label: "Manager", href: "/admin" })
-    }
 
     return (
         <NavbarClient navItems={navItems} isLoggedIn={!!session?.user} />
