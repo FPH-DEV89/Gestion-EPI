@@ -8,5 +8,10 @@
   - [x] Rédiger `data-analyst.md` avec les responsabilités clés
   - [x] Soumettre à validation
 
+## Tâches terminées récemment
+- [x] Correction orthographique "Tour de cou" automatisée dans le déploiement (`seed.ts`).
+- [x] Dashboard Manager : Ajout du suivi agrégé des EPI par collaborateur.
+- [x] Chatbot : Refonte du filtrage de l'outil `getStock` pour forcer des recherches exactes et éviter le dump complet de la base de données.
+
 ## Backlog
-- 
+- Vous pouvez ajouter vos prochaines tâches ici.
