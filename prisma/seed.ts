@@ -5,6 +5,36 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Seeding PPE list...')
 
+  // Fix typo from previous versions
+  try {
+    const existingOldItem = await prisma.stockItem.findUnique({
+      where: { category: 'TOUR_DE_COUP' }
+    });
+
+    if (existingOldItem) {
+      console.log('Renaming TOUR_DE_COUP to TOUR_DE_COU...');
+      // Since category is unique, we must update it
+      await prisma.stockItem.update({
+        where: { category: 'TOUR_DE_COUP' },
+        data: {
+          category: 'TOUR_DE_COU',
+          label: 'Tour de cou'
+        }
+      });
+      console.log('Renamed categories in StockItem.');
+      
+      // Update history
+      await prisma.requestItem.updateMany({
+        where: { category: 'TOUR_DE_COUP' },
+        data: { category: 'TOUR_DE_COU' }
+      });
+      console.log('Updated RequestItem history records.');
+    }
+  } catch (err) {
+    console.warn('Silent skip of typo fix (maybe already fixed or unique constraint prevents it):', err);
+  }
+
+
   const size34to48 = ["34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48"];
   const sizeXSto2XL = ["XS", "S", "M", "L", "XL", "XXL"];
   const sizeTU = ["TU"];
