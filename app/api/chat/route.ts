@@ -30,16 +30,18 @@ RÈGLES DE SÉCURITÉ ET DE PÉRIMÈTRE :
 
 IMPORTANT (getStock):
 - L'outil getStock renvoie "category", "label", "prixUnitaire" et "stockParTaille".
-- Tu dois TOUJOURS formater la réponse de stock de manière lisible avec le détail par taille.
-- Si l'utilisateur mentionne un article spécifique (ex: "bonnet"), tu DOIS impérativement passer ce nom dans le paramètre "search" de l'outil getStock pour filtrer les résultats.`,
+- Tu dois TOUJOURS formater la réponse de stock de manière lisible.
+- Si l'utilisateur demande la quantité d'un article spécifique (ex: "bonnet"), tu DOIS filtrer avec le paramètre "search" en écrivant le nom exact de l'article (ex: "bonnet"). IL EST STRICTEMENT INTERDIT de renvoyer tout le stock si l'utilisateur demande un article précis.
+- Dans ce cas, NE DONNE JAMAIS les informations des autres articles.
+- Sois ultra-concis. Va droit au but sans blabla inutile.`,
         messages: coreMessages,
         tools: {
             getStock: tool({
-                description: 'Obtenir la liste des articles en stock avec leurs quantités détaillées par taille. Cherche par label (nom affiché comme "Bonnet", "Chaussure de sécurité") et non par catégorie technique.',
+                description: 'Obtenir la liste des articles en stock avec leurs quantités détaillées par taille. CHERCHE TOUJOURS par label si un article est précisé (ex: "Bonnet", "Chaussure"). Ne laisse jamais la chaine vide si un article est demandé.',
                 parameters: z.object({
-                    search: z.string().optional().describe('Le nom de l\'article recherché (ex: "Bonnet", "Chaussure", "Gant"). Tu DOIS filtrer si l\'utilisateur demande un article précis.'),
+                    search: z.string().describe('Le nom de l\'article recherché. CRITIQUE : tu DOIS fournir le mot clé si un article est demandé. Ne mets "" QUE SI on te demande EXPRESSÉMENT l\'intégralité du stock.'),
                 }),
-                execute: async ({ search }: { search?: string }) => {
+                execute: async ({ search }: { search: string }) => {
                     console.log(`[ChatTool] getStock called with search: "${search || 'NONE'}"`);
                     const where = search
                         ? {
