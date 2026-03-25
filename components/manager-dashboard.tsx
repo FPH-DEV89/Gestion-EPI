@@ -9,10 +9,13 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { validateRequest, rejectRequest, updateStock } from "@/app/actions"
-import { handleSignOut } from "@/app/lib/actions"
+import { validateRequest, rejectRequest, updateStock, handleSignOut } from "@/app/actions"
+import { handleSignOut as serverSignOut } from "@/app/lib/actions"
 import { sortSizes } from "@/lib/utils"
-import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3, ShieldAlert, Users, LogOut, ChevronLeft } from "lucide-react"
+import { 
+    Package, ClipboardList, Settings, Save, X, Check, History, Download, 
+    BarChart3, ShieldAlert, Users, LogOut, ChevronLeft, MoreHorizontal, LayoutDashboard
+} from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
 import { useToast } from "@/components/ui/use-toast"
@@ -150,14 +153,25 @@ export default function ManagerDashboard({
     const [editingStockId, setEditingStockId] = useState<string | null>(null)
     const [editValues, setEditValues] = useState<Record<string, number>>({})
     const [activeTab, setActiveTab] = useState("requests")
-    const router = useRouter()
+    const [isRefreshing, setIsRefreshing] = useState(false)
+    const [showMoreMenu, setShowMoreMenu] = useState(false)
     const { toast } = useToast()
+
+    const navItems = [
+        { id: 'requests', label: 'Demandes', icon: ClipboardList, isPrimary: true },
+        { id: 'inventory', label: 'Stock', icon: Package, isPrimary: true },
+        { id: 'statistics', label: 'Stats', icon: BarChart3, isPrimary: true },
+        { id: 'employees', label: 'Collab', icon: Users, isPrimary: false },
+        { id: 'history', label: 'Histoire', icon: History, isPrimary: false },
+        { id: 'audit', label: 'Audit', icon: ShieldAlert, isPrimary: false },
+    ]
     // Auth is handled by the parent AdminPage and middleware, but we enforce ADMIN role rigorously here.
     const isAuthorized = userRole === "ADMIN"
 
     if (!isAuthorized) return null
 
     const handleValidate = async (id: string, employeeName: string) => {
+        setIsRefreshing(true)
         const res = await validateRequest(id)
         if (res.success) {
             toast({
@@ -165,7 +179,7 @@ export default function ManagerDashboard({
                 description: `La demande de ${employeeName} a été validée avec succès.`,
                 className: "bg-emerald-50 border-emerald-200 text-emerald-800",
             })
-            router.refresh()
+            // router.refresh()
         } else {
             toast({
                 variant: "destructive",
@@ -173,16 +187,18 @@ export default function ManagerDashboard({
                 description: res.error || "Une erreur est survenue.",
             })
         }
+        setIsRefreshing(false)
     }
 
     const handleReject = async (id: string, employeeName: string) => {
+        setIsRefreshing(true)
         const res = await rejectRequest(id)
         if (res.success) {
             toast({
                 title: "Demande refusée",
                 description: `La demande de ${employeeName} a été refusée.`,
             })
-            router.refresh()
+            // router.refresh()
         } else {
             toast({
                 variant: "destructive",
@@ -190,6 +206,7 @@ export default function ManagerDashboard({
                 description: res.error || "Une erreur est survenue.",
             })
         }
+        setIsRefreshing(false)
     }
 
     const startEditing = (item: StockItem) => {
@@ -198,6 +215,7 @@ export default function ManagerDashboard({
     }
 
     const saveStock = async (itemId: string) => {
+        setIsRefreshing(true)
         // Optimistic update: update local state immediately
         setStock(prevStock => prevStock.map(item => {
             if (item.id === itemId) {
@@ -217,7 +235,8 @@ export default function ManagerDashboard({
             description: "Les quantités ont été enregistrées.",
             className: "bg-blue-50 border-blue-200 text-blue-800",
         })
-        router.refresh()
+        // router.refresh()
+        setIsRefreshing(false)
     }
 
     const exportRequestsToCSV = () => {
@@ -394,27 +413,11 @@ export default function ManagerDashboard({
             <div className="mt-20 px-4">
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="bg-white border shadow-sm h-12">
-                    <TabsTrigger value="requests" className="data-[state=active]:text-brand">
-                        <ClipboardList className="w-4 h-4 mr-2" /> Demandes
-                    </TabsTrigger>
-                    <TabsTrigger value="history" className="data-[state=active]:text-brand">
-                        <History className="w-4 h-4 mr-2" /> Historique
-                    </TabsTrigger>
-                    <TabsTrigger value="employees" className="data-[state=active]:text-brand">
-                        <Users className="w-4 h-4 mr-2" /> Collaborateurs
-                    </TabsTrigger>
-                    <TabsTrigger value="inventory" className="data-[state=active]:text-brand">
-                        <Package className="w-4 h-4 mr-2" /> Inventaire
-                    </TabsTrigger>
-                    <TabsTrigger value="statistics" className="data-[state=active]:text-brand">
-                        <BarChart3 className="w-4 h-4 mr-2" /> Statistiques
-                    </TabsTrigger>
-                    {userRole === "ADMIN" && (
-                        <TabsTrigger value="audit" className="data-[state=active]:text-blue-600">
-                            <ShieldAlert className="w-4 h-4 mr-2" /> Audit
-                        </TabsTrigger>
-                    )}
+                {/* Radix TabsList is now hidden because we use our custom Nav components */}
+                <TabsList className="hidden h-0 w-0 p-0 overflow-hidden">
+                    {navItems.map(item => (
+                        <TabsTrigger key={item.id} value={item.id}>{item.label}</TabsTrigger>
+                    ))}
                 </TabsList>
 
                 <TabsContent value="requests">
@@ -925,6 +928,86 @@ export default function ManagerDashboard({
 
             </Tabs>
         </div>
+            {/* World-Class Mobile Bottom Navigation Dock */}
+            <div className="md:hidden fixed bottom-6 left-4 right-4 z-50">
+                <div className="bg-white/95 backdrop-blur-xl rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/20 p-2 flex items-center justify-between mx-auto max-w-md">
+                    {navItems.filter(i => i.isPrimary).map((item) => {
+                        const isActive = activeTab === item.id;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => {
+                                    setActiveTab(item.id);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-[20px] transition-all duration-300 relative ${
+                                    isActive ? "text-[#135bec]" : "text-slate-400 hover:text-slate-600"
+                                }`}
+                            >
+                                {isActive && (
+                                    <div className="absolute top-1 w-8 h-1 bg-[#135bec] rounded-full blur-[1px]" />
+                                )}
+                                <item.icon className={`w-6 h-6 ${isActive ? "scale-110" : ""}`} />
+                                <span className={`text-[10px] font-bold tracking-tight ${isActive ? "opacity-100" : "opacity-80"}`}>
+                                    {item.label}
+                                </span>
+                                {isActive && (
+                                    <div className="absolute inset-0 bg-blue-50/50 rounded-[20px] -z-10" />
+                                )}
+                            </button>
+                        );
+                    })}
+                    
+                    {/* More Menu Toggle */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowMoreMenu(!showMoreMenu)}
+                            className={`flex-1 min-w-[64px] flex flex-col items-center gap-1.5 py-3 rounded-[20px] transition-all duration-300 ${
+                                navItems.filter(i => !i.isPrimary).some(i => i.id === activeTab) || showMoreMenu
+                                    ? "text-[#135bec]" : "text-slate-400"
+                            }`}
+                        >
+                            <MoreHorizontal className="w-6 h-6" />
+                            <span className="text-[10px] font-bold">Plus</span>
+                            {(navItems.filter(i => !i.isPrimary).some(i => i.id === activeTab) || showMoreMenu) && (
+                                <div className="absolute inset-0 bg-blue-50/50 rounded-[20px] -z-10" />
+                            )}
+                        </button>
+
+                        {/* Popover Menu for Secondary Items */}
+                        {showMoreMenu && (
+                            <div className="absolute bottom-full right-0 mb-4 w-48 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-100 p-2 animate-in slide-in-from-bottom-2 duration-300 origin-bottom-right">
+                                {navItems.filter(i => !i.isPrimary).map((item) => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => {
+                                            setActiveTab(item.id);
+                                            setShowMoreMenu(false);
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
+                                        className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+                                            activeTab === item.id 
+                                                ? "bg-blue-50 text-[#135bec]" 
+                                                : "text-slate-600 hover:bg-slate-50"
+                                        }`}
+                                    >
+                                        <item.icon className="w-5 h-5" />
+                                        <span className="text-sm font-bold">{item.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+            
+            {/* Click overlay to close menu */}
+            {showMoreMenu && (
+                <div 
+                    className="fixed inset-0 z-40 md:hidden" 
+                    onClick={() => setShowMoreMenu(false)}
+                />
+            )}
         </div>
     )
 }
