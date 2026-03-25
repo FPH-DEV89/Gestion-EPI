@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -8,9 +9,9 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { validateRequest, rejectRequest, updateStock } from "@/app/actions"
+import { validateRequest, rejectRequest, updateStock, handleSignOut } from "@/app/actions"
 import { sortSizes } from "@/lib/utils"
-import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3, ShieldAlert, Users } from "lucide-react"
+import { Package, ClipboardList, Settings, Save, X, Check, History, Download, BarChart3, ShieldAlert, Users, LogOut, ChevronLeft } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
 import { useToast } from "@/components/ui/use-toast"
@@ -323,11 +324,24 @@ export default function ManagerDashboard({
             <div className="bg-[#135bec] text-white pt-10 pb-24 px-8 rounded-b-[40px] shadow-lg mb-8">
                 <div className="flex justify-between items-center mb-10">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                            <img src="/icons/icon-192x192.png" alt="STEF" className="w-10 h-10 object-contain rounded-lg" />
-                        </div>
-                        <h1 className="text-3xl font-black tracking-tight uppercase">EPI Manager Admin</h1>
+                        <Link href="/">
+                            <Button variant="ghost" className="text-white hover:bg-white/10 p-2">
+                                <ChevronLeft className="w-6 h-6" />
+                            </Button>
+                        </Link>
+                        <Link href="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
+                            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                                <img src="/icons/icon-192x192.png" alt="STEF" className="w-10 h-10 object-contain rounded-lg" />
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase">EPI Manager Admin</h1>
+                        </Link>
                     </div>
+                    <form action={handleSignOut}>
+                        <Button type="submit" variant="ghost" className="text-white hover:bg-white/10 flex items-center gap-2">
+                            <LogOut className="w-5 h-5" />
+                            <span className="hidden sm:inline">Déconnexion</span>
+                        </Button>
+                    </form>
                 </div>
 
                 {/* Metric Cards Section (Screenshot 2) */}
