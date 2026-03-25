@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -101,9 +102,11 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                         <h1 className="text-xl font-black tracking-tight uppercase">Demande EPI</h1>
                         <p className="text-blue-100/70 text-[10px] font-bold tracking-widest uppercase">STEF EPI Manager</p>
                     </div>
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                        <User className="w-6 h-6" />
-                    </div>
+                    <Link href="/admin">
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors cursor-pointer">
+                            <User className="w-6 h-6" />
+                        </div>
+                    </Link>
                 </div>
             </div>
 
