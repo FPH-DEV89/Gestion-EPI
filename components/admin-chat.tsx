@@ -9,6 +9,7 @@ export function AdminChatWidget() {
     const [inputValue, setInputValue] = useState('');
 
     const chatHelpers = useChat({
+        // @ts-ignore - 'api' property might have changed in experimental SDK version
         api: '/api/chat',
     });
 

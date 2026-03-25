@@ -128,12 +128,12 @@ export async function validateRequest(requestId: string) {
                 where: { id: requestId },
                 data: {
                     status: "Ordered",
-                    validatedById: session.user.id,
+                    validatedById: session!.user!.id as string,
                     validatedAt: new Date()
                 },
             });
 
-            await recordAuditLog(tx, session.user.id as string, "VALIDATE_REQUEST", {
+            await recordAuditLog(tx, session!.user!.id as string, "VALIDATE_REQUEST", {
                 requestId,
                 employeeName: request.employeeName,
                 items: request.items.map(i => ({ category: i.category, size: i.size }))
@@ -161,12 +161,12 @@ export async function rejectRequest(requestId: string) {
                 where: { id: requestId },
                 data: {
                     status: "Rejected",
-                    validatedById: session.user.id,
+                    validatedById: session!.user!.id as string,
                     validatedAt: new Date()
                 },
             });
 
-            await recordAuditLog(tx, session.user.id as string, "REJECT_REQUEST", {
+            await recordAuditLog(tx, session!.user!.id as string, "REJECT_REQUEST", {
                 requestId,
                 employeeName: request.employeeName
             });
@@ -203,7 +203,7 @@ export async function updateStock(categoryId: string, size: string, quantity: nu
                 data: { stock: newStock },
             });
 
-            await recordAuditLog(tx, session.user.id as string, "UPDATE_STOCK", {
+            await recordAuditLog(tx, session!.user!.id as string, "UPDATE_STOCK", {
                 category: stockItem.category,
                 size,
                 oldQuantity,

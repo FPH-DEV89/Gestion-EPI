@@ -9,6 +9,15 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "EPI MANAGER",
   description: "Système de gestion de stock d'Équipements de Protection Individuelle",
+  manifest: "/manifest.json",
+  icons: {
+    apple: "/icons/icon-192x192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "EPI Mgr",
+  },
 };
 
 export default function RootLayout({
