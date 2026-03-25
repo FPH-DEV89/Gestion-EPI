@@ -9,8 +9,8 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { validateRequest, rejectRequest, updateStock, handleSignOut } from "@/app/actions"
-import { handleSignOut as serverSignOut } from "@/app/lib/actions"
+import { validateRequest, rejectRequest, updateStock } from "@/app/actions"
+import { handleSignOut } from "@/app/lib/actions"
 import { sortSizes } from "@/lib/utils"
 import { 
     Package, ClipboardList, Settings, Save, X, Check, History, Download, 
