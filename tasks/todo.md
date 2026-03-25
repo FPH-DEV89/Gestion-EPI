@@ -8,9 +8,13 @@
   - [x] Rédiger `data-analyst.md` avec les responsabilités clés
   - [x] Soumettre à validation
 
+## Tâches en cours
+- [/] PWA : Redesign du logo "Grand Froid" (Gants + Flocon, Couleurs STEF).
+- [ ] PWA : Mise à jour des icônes de l'application sur Vercel.
+
 ## Tâches terminées
 - [x] PWA : Installation de Serwist et configuration du Service Worker.
-- [x] PWA : Génération des icônes adaptatives (STEF Blue).
+- [x] PWA : Génération des icônes adaptatives initiales (STEF Blue).
 - [x] PWA : Création du `manifest.json` et mise à jour du `layout.tsx`.
 
 ## Tâches terminées récemment

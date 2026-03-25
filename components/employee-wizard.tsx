@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { createRequests } from "@/app/actions"
 import { sortSizes } from "@/lib/utils"
-import { ChevronRight, ChevronLeft, CheckCircle2, User, HardHat, Ruler, Info } from "lucide-react"
+import { ChevronRight, ChevronLeft, CheckCircle2, User, HardHat, Ruler, Info, Plus } from "lucide-react"
 
 interface StockItem {
     id: string
@@ -90,12 +90,35 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
     }
 
     return (
-        <Card className="max-w-md mx-auto mt-10 shadow-2xl border-none rounded-4xl overflow-hidden bg-white dark:bg-slate-900/80 dark:backdrop-blur-2xl dark:ring-1 dark:ring-white/10">
-            <CardHeader className="bg-transparent pt-10 pb-2 px-8">
-                <CardTitle className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
-                    {step === 2 ? "Quels EPI ?" : step === 3 ? "Tailles" : step === 4 ? "Motif" : "Demande EPI"}
-                </CardTitle>
-            </CardHeader>
+        <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-10">
+            {/* Stitch Wizard Header (Screenshot 4) */}
+            <div className="bg-[#135bec] text-white pt-10 pb-20 px-8 rounded-b-[40px] shadow-lg mb-8">
+                <div className="flex justify-between items-center mb-6">
+                    <Button variant="ghost" className="text-white hover:bg-white/10 p-2" onClick={() => window.location.reload()}>
+                         <ChevronLeft className="w-6 h-6" />
+                    </Button>
+                    <div className="text-center flex-1">
+                        <h1 className="text-xl font-black tracking-tight uppercase">Demande EPI</h1>
+                        <p className="text-blue-100/70 text-[10px] font-bold tracking-widest uppercase">STEF EPI Manager</p>
+                    </div>
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <User className="w-6 h-6" />
+                    </div>
+                </div>
+            </div>
+
+            <Card className="mx-6 -mt-16 shadow-2xl border-none rounded-[32px] overflow-hidden bg-white/95 backdrop-blur-xl">
+                <CardHeader className="bg-transparent pt-8 pb-2 px-8">
+                    <div className="flex gap-1 mb-2">
+                        {[1,2,3,4].map(s => (
+                            <div key={s} className={`h-1.5 flex-1 rounded-full ${s <= step ? 'bg-brand' : 'bg-slate-100'}`} />
+                        ))}
+                    </div>
+                    <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{step}. Informations</CardDescription>
+                    <CardTitle className="text-2xl font-black text-slate-800 tracking-tight">
+                        {step === 2 ? "Quels EPI ?" : step === 3 ? "Tailles" : step === 4 ? "Motif" : "Nouvelle Demande"}
+                    </CardTitle>
+                </CardHeader>
 
             <CardContent className="px-8 pb-10 pt-4">
                 {step === 1 && (
@@ -294,5 +317,6 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                 )}
             </CardFooter>
         </Card>
+        </div>
     )
 }
