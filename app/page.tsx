@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import EmployeeDashboard from "@/components/employee-dashboard"
+import EmployeeWizard from "@/components/employee-wizard"
 
 export const dynamic = "force-dynamic"
 
@@ -19,7 +19,7 @@ export default async function HomePage() {
 
     return (
       <main className="min-h-screen bg-slate-50">
-        <EmployeeDashboard stockItems={serializedStock} />
+        <EmployeeWizard stockItems={serializedStock} />
       </main>
     )
   } catch (error) {
