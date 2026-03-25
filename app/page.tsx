@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import EmployeeWizard from "@/components/employee-wizard"
+import EmployeeDashboard from "@/components/employee-dashboard"
 
 export const dynamic = "force-dynamic"
 
@@ -18,8 +18,8 @@ export default async function HomePage() {
     }))
 
     return (
-      <main className="min-h-screen bg-background p-4 md:p-10">
-        <EmployeeWizard stockItems={serializedStock} />
+      <main className="min-h-screen bg-slate-50">
+        <EmployeeDashboard stockItems={serializedStock} />
       </main>
     )
   } catch (error) {
@@ -28,9 +28,9 @@ export default async function HomePage() {
     // Fallback for development/offline mode
     if (process.env.NODE_ENV === 'development') {
       return (
-        <main className="min-h-screen bg-background p-4 md:p-10">
-          <EmployeeWizard stockItems={[]} />
-          <div className="fixed bottom-4 right-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg text-xs">
+        <main className="min-h-screen bg-slate-50">
+          <EmployeeDashboard stockItems={[]} />
+          <div className="fixed bottom-24 right-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg text-xs shadow-lg z-50">
             Mode Déconnecté (DB inaccessible)
           </div>
         </main>

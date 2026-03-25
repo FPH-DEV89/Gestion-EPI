@@ -318,13 +318,65 @@ export default function ManagerDashboard({
     }
 
     return (
-        <div className="max-w-6xl mx-auto py-10 px-4 min-h-screen transition-colors">
-            <div className="flex justify-between items-center mb-12">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Dashboard Manager</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">Gestion intelligente de vos équipements</p>
+        <div className="max-w-6xl mx-auto min-h-screen bg-slate-50 pb-20">
+            {/* Stitch Admin Header (Screenshot 2) */}
+            <div className="bg-[#135bec] text-white pt-10 pb-24 px-8 rounded-b-[40px] shadow-lg mb-8">
+                <div className="flex justify-between items-center mb-10">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                            <img src="/icons/icon-192x192.png" alt="STEF" className="w-10 h-10 object-contain rounded-lg" />
+                        </div>
+                        <h1 className="text-3xl font-black tracking-tight uppercase">EPI Manager Admin</h1>
+                    </div>
+                </div>
+
+                {/* Metric Cards Section (Screenshot 2) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mb-40">
+                    <Card className="border-none shadow-xl rounded-[28px] overflow-hidden bg-white">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-slate-800 font-black text-lg">Demandes en cours</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex items-end justify-between">
+                            <div className="text-5xl font-black text-slate-900 leading-none">
+                                {requests.filter(r => r.status === "Pending").length}
+                            </div>
+                            <div className="bg-blue-50 p-3 rounded-2xl text-brand outline outline-1 outline-blue-100">
+                                <ClipboardList className="w-8 h-8" />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-xl rounded-[28px] overflow-hidden bg-white">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-slate-800 font-black text-lg">Alerte Stock</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex items-end justify-between">
+                            <div className="text-5xl font-black text-slate-900 leading-none">
+                                {stock.filter(item => Object.values(item.stock).some(q => q < item.minThreshold)).length}
+                            </div>
+                            <div className="bg-amber-50 p-3 rounded-2xl text-amber-600 outline outline-1 outline-amber-100">
+                                <ShieldAlert className="w-8 h-8" />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-xl rounded-[28px] overflow-hidden bg-white">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-slate-800 font-black text-lg">Collaborateurs</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex items-end justify-between">
+                            <div className="text-5xl font-black text-slate-900 leading-none">
+                                {new Set(requests.map(r => r.employeeName)).size}
+                            </div>
+                            <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600 outline outline-1 outline-emerald-100">
+                                <Users className="w-8 h-8" />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
+
+            <div className="mt-20 px-4">
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 <TabsList className="bg-white border shadow-sm h-12">
@@ -857,6 +909,7 @@ export default function ManagerDashboard({
                 )}
 
             </Tabs>
+        </div>
         </div>
     )
 }
