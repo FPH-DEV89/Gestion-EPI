@@ -10,6 +10,10 @@ import {
     Sector
 } from 'recharts'
 
+const PieAny: any = Pie;
+const BarAny: any = Bar;
+const TooltipAny: any = Tooltip;
+
 // ─── Animated Counter Hook (Effet Waou) ─────────────────────────────────────
 function useAnimatedCounter(end: number, duration = 1200) {
     const [count, setCount] = useState(0)
@@ -320,7 +324,7 @@ export default function StatisticsDashboard({
                                 <ResponsiveContainer width="100%" height={260}>
                                     <PieChart>
                                         <GradientDefs />
-                                        <Pie
+                                        <PieAny
                                             activeIndex={activePieIndex}
                                             activeShape={renderActiveShape}
                                             data={topEPIData}
@@ -328,15 +332,15 @@ export default function StatisticsDashboard({
                                             innerRadius={65} outerRadius={95}
                                             paddingAngle={4}
                                             dataKey="value"
-                                            onMouseEnter={(_, index) => setActivePieIndex(index)}
-                                            onClick={(_, index) => setActivePieIndex(index)}
+                                            onMouseEnter={(_: any, index: any) => setActivePieIndex(index)}
+                                            onClick={(_: any, index: any) => setActivePieIndex(index)}
                                             style={{ cursor: 'pointer' }}
                                         >
-                                            {topEPIData.map((_, index) => (
+                                            {topEPIData.map((_: any, index: any) => (
                                                 <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
                                             ))}
-                                        </Pie>
-                                        <Tooltip content={<PieTooltip />} />
+                                        </PieAny>
+                                        <TooltipAny content={<PieTooltip />} />
                                     </PieChart>
                                 </ResponsiveContainer>
                                 {/* Legend dots */}
@@ -380,13 +384,13 @@ export default function StatisticsDashboard({
                                         axisLine={false} tickLine={false}
                                     />
                                     <Tooltip content={<BarTooltip isCost={false} />} cursor={{ fill: '#f1f5f9', radius: 6 }} />
-                                    <Bar
+                                    <BarAny
                                         dataKey="count"
                                         fill="url(#blueGrad)"
                                         radius={[0, 8, 8, 0]}
                                         isAnimationActive={true}
                                         animationDuration={800}
-                                        onMouseEnter={(d) => setHighlightedService(d.service)}
+                                        onMouseEnter={(d: any) => setHighlightedService(d.service)}
                                         onMouseLeave={() => setHighlightedService(null)}
                                     >
                                         {serviceData.map((entry) => (
@@ -398,7 +402,7 @@ export default function StatisticsDashboard({
                                                 }
                                             />
                                         ))}
-                                    </Bar>
+                                    </BarAny>
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
@@ -422,7 +426,7 @@ export default function StatisticsDashboard({
                                     <XAxis
                                         type="number"
                                         tick={{ fontSize: 11, fill: '#94a3b8' }}
-                                        tickFormatter={(v) => `${v}€`}
+                                        tickFormatter={(v: any) => `${v}€`}
                                         axisLine={false} tickLine={false}
                                     />
                                     <YAxis
@@ -431,7 +435,7 @@ export default function StatisticsDashboard({
                                         axisLine={false} tickLine={false}
                                     />
                                     <Tooltip content={<BarTooltip isCost={true} />} cursor={{ fill: '#f0fdf4', radius: 6 }} />
-                                    <Bar
+                                    <BarAny
                                         dataKey="value"
                                         fill="url(#greenGrad)"
                                         radius={[0, 8, 8, 0]}
