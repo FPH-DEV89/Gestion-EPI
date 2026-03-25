@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push && npx prisma db seed && next build",
+    "build": "prisma db push && npx prisma db seed && next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "test": "npx vitest",
@@ -16,7 +16,7 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.29",
     "@ai-sdk/openai": "^3.0.29",
-    "@ai-sdk/react": "^3.0.92",
+    "@ai-sdk/react": "^3.0.140",
     "@ai-sdk/xai": "^3.0.64",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -26,8 +26,9 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
+    "@serwist/next": "^9.5.7",
     "@types/bcryptjs": "^2.4.6",
-    "ai": "^6.0.90",
+    "ai": "^6.0.138",
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
@@ -41,10 +42,12 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
+    "serwist": "^9.5.7",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@serwist/webpack-plugin": "^9.5.7",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
