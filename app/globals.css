@@ -56,3 +56,13 @@ body {
     @apply bg-[--color-brand] text-[--color-brand-foreground] hover:bg-[--color-brand]/90 transition-all rounded-[--radius-xl];
   }
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

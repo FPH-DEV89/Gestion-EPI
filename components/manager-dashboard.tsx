@@ -1,4 +1,5 @@
 "use client"
+"use client"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
@@ -9,16 +10,21 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { validateRequest, rejectRequest, updateStock } from "@/app/actions"
+import { validateRequest, rejectRequest, updateStock, updateSkuMetadata } from "@/app/actions"
 import { handleSignOut } from "@/app/lib/actions"
 import { sortSizes } from "@/lib/utils"
 import { 
     Package, ClipboardList, Settings, Save, X, Check, History, Download, 
-    BarChart3, ShieldAlert, Users, LogOut, ChevronLeft, MoreHorizontal, LayoutDashboard
+    BarChart3, ShieldAlert, Users, LogOut, ChevronLeft, MoreHorizontal,
+    Bell, Plus, Minus
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
+import HistoryView from "./history-view"
+import AuditLogView from "./audit-log-view"
+import CollaboratorsView from "./collaborators-view"
 import { useToast } from "@/components/ui/use-toast"
+import { AdminChatWidget } from "./admin-chat"
 
 import {
     AlertDialog,
@@ -67,6 +73,7 @@ interface StockItem {
     minThreshold: number
     price: number
     stock: Record<string, number>
+    skuMetadata?: Record<string, { ref: string; location: string }>
 }
 
 interface AuditLog {
@@ -93,23 +100,40 @@ export default function ManagerDashboard({
     const [searchTerm, setSearchTerm] = useState("")
     const [filterCategory, setFilterCategory] = useState("ALL")
 
-    const filteredStock = stock.filter(item => {
+    const flattenedStock = stock.flatMap(item => 
+        Object.keys(item.stock).map(size => {
+            const metadata = (item.skuMetadata as Record<string, any>)?.[size] || {}
+            
+            // Fixed image logic for better visual quality
+            let image = 'https://images.unsplash.com/photo-1532634922-8fe0b757fb13?auto=format&fit=crop&q=80&w=200'
+            const cat = item.category.toLowerCase()
+            if (cat.includes('chaussure') || cat.includes('basket')) image = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=200'
+            else if (cat.includes('gant')) image = 'https://images.unsplash.com/photo-1590856029826-c7a73142bbf1?auto=format&fit=crop&q=80&w=200'
+            else if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka')) image = 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=200'
+            else if (cat.includes('pantalon')) image = 'https://images.unsplash.com/photo-1624371414361-e6e8ea7c7526?auto=format&fit=crop&q=80&w=200'
+            else if (cat.includes('casque') || cat.includes('protection')) image = 'https://images.unsplash.com/photo-1595165997096-3b6045d44810?auto=format&fit=crop&q=80&w=200'
+            else if (cat.includes('gilet')) image = 'https://images.unsplash.com/photo-1614786269829-d34618e8c84b?auto=format&fit=crop&q=80&w=200'
+
+            return {
+                ...item,
+                size,
+                quantity: item.stock[size],
+                ref: metadata.ref || `${item.category.substring(0, 2).toUpperCase()}-${size}-TEMP`,
+                location: metadata.location || `ZONE-A-01`,
+                image
+            }
+        })
+    )
+
+    const filteredStock = flattenedStock.filter(item => {
         const matchesSearch = item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.category.toLowerCase().includes(searchTerm.toLowerCase())
+            item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.ref.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = filterCategory === "ALL" || item.category === filterCategory
         return matchesSearch && matchesCategory
     })
 
-    const [historySearchTerm, setHistorySearchTerm] = useState("")
-    const [historyFilterCategory, setHistoryFilterCategory] = useState("ALL")
-
-    const filteredHistory = requests.filter(r => {
-        if (r.status === "Pending") return false // Only history
-        const matchesSearch = r.employeeName.toLowerCase().includes(historySearchTerm.toLowerCase()) ||
-            r.items.some(i => i.category.toLowerCase().includes(historySearchTerm.toLowerCase()))
-        const matchesCategory = historyFilterCategory === "ALL" || r.items.some(i => i.category === historyFilterCategory)
-        return matchesSearch && matchesCategory
-    })
+    const [activeTab, setActiveTab] = useState("requests")
 
     // Sync state with props when router.refresh() is called
     useEffect(() => {
@@ -120,25 +144,10 @@ export default function ManagerDashboard({
         setStock(initialStock)
     }, [initialStock])
 
-    // Pagination Historique
-    const [historyPage, setHistoryPage] = useState(1)
-    const itemsPerPage = 10
-    const totalHistoryPages = Math.ceil(filteredHistory.length / itemsPerPage)
-
-    // Reset page on filter change
-    useEffect(() => {
-        setHistoryPage(1)
-    }, [historySearchTerm, historyFilterCategory])
-
-    const currentHistoryItems = filteredHistory.slice(
-        (historyPage - 1) * itemsPerPage,
-        historyPage * itemsPerPage
-    )
-
     // Pagination Inventaire
     const [inventoryPage, setInventoryPage] = useState(1)
     const inventoryItemsPerPage = 10
-    const totalInventoryPages = Math.ceil(filteredStock.length / inventoryItemsPerPage)
+    const totalInventoryPages = Math.ceil(filteredStock.length / 10)
 
     // Reset page on filter change
     useEffect(() => {
@@ -152,9 +161,10 @@ export default function ManagerDashboard({
 
     const [editingStockId, setEditingStockId] = useState<string | null>(null)
     const [editValues, setEditValues] = useState<Record<string, number>>({})
-    const [activeTab, setActiveTab] = useState("requests")
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [showMoreMenu, setShowMoreMenu] = useState(false)
+    const [editingSku, setEditingSku] = useState<{ id: string, size: string, field: 'ref' | 'location' } | null>(null)
+    const [editMetadataValue, setEditMetadataValue] = useState("")
     const { toast } = useToast()
 
     const navItems = [
@@ -162,9 +172,10 @@ export default function ManagerDashboard({
         { id: 'inventory', label: 'Stock', icon: Package, isPrimary: true },
         { id: 'statistics', label: 'Stats', icon: BarChart3, isPrimary: true },
         { id: 'employees', label: 'Collab', icon: Users, isPrimary: false },
-        { id: 'history', label: 'Histoire', icon: History, isPrimary: false },
+        { id: 'history', label: 'Historique', icon: History, isPrimary: false },
         { id: 'audit', label: 'Audit', icon: ShieldAlert, isPrimary: false },
     ]
+
     // Auth is handled by the parent AdminPage and middleware, but we enforce ADMIN role rigorously here.
     const isAuthorized = userRole === "ADMIN"
 
@@ -214,29 +225,50 @@ export default function ManagerDashboard({
         setEditValues(item.stock)
     }
 
-    const saveStock = async (itemId: string) => {
-        setIsRefreshing(true)
-        // Optimistic update: update local state immediately
-        setStock(prevStock => prevStock.map(item => {
+    const handleAdjustStock = async (itemId: string, size: string, delta: number) => {
+        setStock(prev => prev.map(item => {
             if (item.id === itemId) {
-                return { ...item, stock: { ...item.stock, ...editValues } }
+                const currentQty = item.stock[size] || 0
+                const newQty = Math.max(0, currentQty + delta)
+                
+                updateStock(itemId, size, newQty).then(res => {
+                    if (!res.success) {
+                        toast({
+                            variant: "destructive",
+                            title: "Erreur de mise à jour",
+                            description: `Échec de l'ajustement du stock pour ${item.label} (${size}).`,
+                        })
+                    }
+                })
+
+                return { ...item, stock: { ...item.stock, [size]: newQty } }
             }
             return item
         }))
+    }
 
-        // Collect all size updates
-        for (const [size, qty] of Object.entries(editValues)) {
-            await updateStock(itemId, size, Number(qty))
-        }
-        setEditingStockId(null)
+    const handleSkuMetadataUpdate = async (itemId: string, size: string, field: 'ref' | 'location', value: string) => {
+        setStock(prev => prev.map(item => {
+            if (item.id === itemId) {
+                const currentMetadata = (item.skuMetadata as Record<string, any>) || {}
+                const currentSkuData = currentMetadata[size] || { ref: "", location: "" }
+                const newSkuData = { ...currentSkuData, [field]: value }
+                
+                updateSkuMetadata(itemId, size, newSkuData.ref, newSkuData.location).then(res => {
+                    if (!res.success) {
+                        toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: "Impossible de mettre à jour les informations physiques."
+                        })
+                    }
+                })
 
-        toast({
-            title: "Stock mis à jour",
-            description: "Les quantités ont été enregistrées.",
-            className: "bg-blue-50 border-blue-200 text-blue-800",
-        })
-        // router.refresh()
-        setIsRefreshing(false)
+                return { ...item, skuMetadata: { ...currentMetadata, [size]: newSkuData } }
+            }
+            return item
+        }))
+        setEditingSku(null)
     }
 
     const exportRequestsToCSV = () => {
@@ -297,34 +329,6 @@ export default function ManagerDashboard({
         })
     }
 
-    const exportToCSV = () => {
-        const processedRequests = requests.filter(r => r.status !== "Pending")
-        const headers = ["Date", "Collaborateur", "Service", "Equipement", "Taille", "Statut"]
-        const rows: string[][] = []
-        processedRequests.forEach(r => {
-            r.items.forEach(item => {
-                rows.push([
-                    new Date(r.createdAt).toLocaleDateString("fr-FR"),
-                    r.employeeName,
-                    r.service,
-                    item.category,
-                    item.size,
-                    r.status === "Ordered" ? "Validé" : "Refusé"
-                ])
-            })
-        })
-
-        const csvContent = [
-            headers.join(";"),
-            ...rows.map(row => row.join(";"))
-        ].join("\n")
-
-        downloadCSV(csvContent, `historique_demandes_epi_${new Date().toISOString().split('T')[0]}.csv`)
-        toast({
-            title: "Export CSV",
-            description: "L'historique a été exporté avec succès.",
-        })
-    }
 
     const downloadCSV = (content: string, filename: string) => {
         const blob = new Blob(["\uFEFF" + content], { type: 'text/csv;charset=utf-8;' })
@@ -339,78 +343,52 @@ export default function ManagerDashboard({
     }
 
     return (
-        <div className="max-w-6xl mx-auto min-h-screen bg-slate-50 pb-20">
-            {/* Stitch Admin Header (Screenshot 2) */}
-            <div className="bg-[#135bec] text-white pt-10 pb-24 px-8 rounded-b-[40px] shadow-lg mb-8">
-                <div className="flex justify-between items-center mb-10">
-                    <div className="flex items-center gap-4">
-                        <Link href="/">
-                            <Button variant="ghost" className="text-white hover:bg-white/10 p-2">
-                                <ChevronLeft className="w-6 h-6" />
-                            </Button>
-                        </Link>
-                        <Link href="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-                            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                                <img src="/icons/icon-192x192.png" alt="STEF" className="w-10 h-10 object-contain rounded-lg" />
-                            </div>
-                            <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase">EPI Manager Admin</h1>
-                        </Link>
-                    </div>
-                    <form action={handleSignOut}>
-                        <Button type="submit" variant="ghost" className="text-white hover:bg-white/10 flex items-center gap-2">
-                            <LogOut className="w-5 h-5" />
-                            <span className="hidden sm:inline">Déconnexion</span>
+        <div className="max-w-6xl mx-auto min-h-screen bg-slate-50 pb-20 relative">
+            {/* World-Class STEF Header (Action Feed Style) */}
+            <div className="bg-[#135bec] text-white pt-8 pb-32 px-6 rounded-b-[40px] shadow-lg mb-8 relative">
+                <div className="flex justify-between items-center mb-6">
+                    <Link href="/">
+                        <Button 
+                            variant="ghost" 
+                            className="text-white hover:bg-white/10 p-2 relative rounded-full flex items-center gap-2"
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                            <span className="text-sm font-bold">Retour</span>
                         </Button>
-                    </form>
+                    </Link>
+                    
+                    <div className="flex flex-col items-center">
+                        <h1 className="text-4xl font-black tracking-tighter text-white">STEF</h1>
+                        <span className="text-lg font-bold opacity-90 mt-[-4px]">
+                            {navItems.find(i => i.id === activeTab)?.label} Feed
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" className="text-white hover:bg-white/10 p-2 rounded-full">
+                            <MoreHorizontal className="w-6 h-6 rotate-90" /> {/* Mimics a search or filter toggle icon if needed, or I can import Search */}
+                        </Button>
+                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-sm font-bold">
+                            {initialRequests[0]?.employeeName.charAt(0) || "M"}
+                        </div>
+                    </div>
                 </div>
 
-                {/* Metric Cards Section (Screenshot 2) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 -mb-40">
-                    <Card className="border-none shadow-xl rounded-[28px] overflow-hidden bg-white">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-slate-800 font-black text-lg">Demandes en cours</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex items-end justify-between">
-                            <div className="text-5xl font-black text-slate-900 leading-none">
-                                {requests.filter(r => r.status === "Pending").length}
-                            </div>
-                            <div className="bg-blue-50 p-3 rounded-2xl text-brand outline outline-1 outline-blue-100">
-                                <ClipboardList className="w-8 h-8" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-xl rounded-[28px] overflow-hidden bg-white">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-slate-800 font-black text-lg">Alerte Stock</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex items-end justify-between">
-                            <div className="text-5xl font-black text-slate-900 leading-none">
-                                {stock.filter(item => Object.values(item.stock).some(q => q < item.minThreshold)).length}
-                            </div>
-                            <div className="bg-amber-50 p-3 rounded-2xl text-amber-600 outline outline-1 outline-amber-100">
-                                <ShieldAlert className="w-8 h-8" />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-xl rounded-[28px] overflow-hidden bg-white">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-slate-800 font-black text-lg">Collaborateurs</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex items-end justify-between">
-                            <div className="text-5xl font-black text-slate-900 leading-none">
-                                {new Set(requests.map(r => r.employeeName)).size}
-                            </div>
-                            <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600 outline outline-1 outline-emerald-100">
-                                <Users className="w-8 h-8" />
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Search / Filter Bar */}
+                <div className="relative max-w-md mx-auto">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                        <MoreHorizontal className="w-4 h-4 text-white/50 rotate-90" />
+                    </div>
+                    <Input
+                        placeholder="Rechercher..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50 rounded-2xl pl-12 h-12 backdrop-blur-md focus:bg-white/20 transition-all"
+                    />
                 </div>
             </div>
 
-            <div className="mt-20 px-4">
+            <div className="mt-8 px-4">
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                 {/* Radix TabsList is now hidden because we use our custom Nav components */}
@@ -420,313 +398,129 @@ export default function ManagerDashboard({
                     ))}
                 </TabsList>
 
-                <TabsContent value="requests">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                {/* Dashboard tab removed — Demandes is now the landing page */}
+
+                <TabsContent value="requests" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="max-w-3xl mx-auto space-y-6 pb-24">
+                        <div className="flex items-center justify-between px-4 mb-2">
                             <div>
-                                <CardTitle>Demandes en cours</CardTitle>
-                                <CardDescription>Validez ou refusez les demandes de vos collaborateurs.</CardDescription>
+                                <h2 className="text-2xl font-black text-slate-800">Demandes en cours</h2>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Flux d'approbation rapide</p>
                             </div>
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="text-brand border-brand/20 hover:bg-brand/5"
+                                className="rounded-xl border-slate-200 text-slate-500 hover:text-[#135bec] hover:border-[#135bec]"
                                 onClick={exportRequestsToCSV}
                                 disabled={requests.filter(r => r.status === "Pending").length === 0}
                             >
-                                <Download className="w-4 h-4 mr-2" /> Exporter CSV
+                                <Download className="w-4 h-4 mr-2" /> CSV
                             </Button>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Collaborateur</TableHead>
-                                        <TableHead>Équipement</TableHead>
-                                        <TableHead>Taille</TableHead>
-                                        <TableHead>Coût Est.</TableHead>
-                                        <TableHead>Statut</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {requests.filter(r => r.status === "Pending").map(req => (
-                                        <TableRow key={req.id}>
-                                            <TableCell>
-                                                <div className="font-medium">{req.employeeName}</div>
-                                                <div className="text-xs text-gray-500">{req.service}</div>
-                                                <div className="text-[10px] text-gray-400 mt-1 italic">"{req.reason}"</div>
-                                            </TableCell>
-                                            <TableCell colSpan={2}>
-                                                <div className="space-y-1">
-                                                    {req.items.map((item, i) => (
-                                                        <div key={i} className="flex items-center justify-between text-sm bg-slate-50 p-1 rounded">
-                                                            <span>{item.category}</span>
-                                                            <Badge variant="secondary" className="text-[10px] h-5">{item.size}</Badge>
+                        </div>
+
+                        {requests.filter(r => r.status === "Pending").length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-24 text-slate-300 space-y-4">
+                                <div className="w-20 h-20 rounded-full border-2 border-slate-100 flex items-center justify-center">
+                                    <Check className="w-10 h-10 opacity-30" />
+                                </div>
+                                <p className="font-black text-lg">Tout est validé !</p>
+                                <p className="text-sm font-bold opacity-60">Aucune demande en attente pour le moment.</p>
+                            </div>
+                        ) : (
+                            requests.filter(r => r.status === "Pending").map(req => (
+                                <div key={req.id} className="bg-white border-none shadow-[0_10px_40px_rgba(0,0,0,0.04)] rounded-[40px] overflow-hidden group hover:shadow-[0_20px_60px_rgba(19,91,236,0.08)] transition-all duration-500 border border-transparent hover:border-blue-100/50">
+                                    {/* Header de la carte */}
+                                    <div className="p-8 border-b border-slate-50 flex justify-between items-start bg-gradient-to-br from-white to-slate-50/30">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-16 h-16 rounded-[22px] bg-[#135bec] flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-200">
+                                                {req.employeeName.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">{req.employeeName}</h3>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{req.service}</span>
+                                                    <div className="w-1.5 h-1.5 bg-blue-100 rounded-full" />
+                                                    <Badge className="bg-blue-50 text-[#135bec] border-none px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter">Urgent</Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-3xl font-black text-slate-900 leading-none tracking-tighter">
+                                                {req.items.reduce((sum, item) => sum + item.snapshottedPrice, 0)}€
+                                            </div>
+                                            <div className="text-[11px] font-bold text-slate-400 uppercase mt-2 tracking-widest">Valeur Estimée</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Contenu - Liste des items */}
+                                    <div className="p-8 space-y-6">
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {req.items.map((item, i) => (
+                                                <div key={i} className="flex items-center justify-between p-5 bg-slate-50/50 rounded-[28px] border border-slate-100/50 group/item hover:bg-white hover:shadow-md transition-all duration-300">
+                                                    <div className="flex items-center gap-5">
+                                                        <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-600">
+                                                            <Package className="w-6 h-6" />
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="font-bold text-brand">
-                                                    {req.items.reduce((sum, item) => sum + item.snapshottedPrice, 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary">{req.status}</Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                <Button
-                                                    size="sm"
-                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                                                    onClick={() => handleValidate(req.id, req.employeeName)}
-                                                >
-                                                    Valider
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="text-red-600 border-red-200 hover:bg-red-50"
-                                                    onClick={() => handleReject(req.id, req.employeeName)}
-                                                >
-                                                    Refuser
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {requests.filter(r => r.status === "Pending").length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="h-64 text-center">
-                                                <div className="flex flex-col items-center justify-center text-gray-500">
-                                                    <div className="bg-gray-100 p-4 rounded-full mb-3">
-                                                        <ClipboardList className="w-8 h-8 text-gray-400" />
+                                                        <div>
+                                                            <span className="block text-lg font-black text-slate-800 tracking-tight">{item.category}</span>
+                                                            <span className="text-xs font-bold text-slate-400">Taille: <span className="text-[#135bec]">{item.size}</span></span>
+                                                        </div>
                                                     </div>
-                                                    <p className="font-medium text-lg">Aucune demande en attente</p>
-                                                    <p className="text-sm text-gray-400 mt-1">Tout est à jour ! Vous pouvez vous détendre ☕</p>
+                                                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-black">
+                                                        × 1
+                                                    </div>
                                                 </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                                            ))}
+                                        </div>
+                                        
+                                        {/* Motif de la demande */}
+                                        <div className="bg-blue-50/20 p-6 rounded-[28px] border border-blue-50/50 relative overflow-hidden">
+                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#135bec]/20" />
+                                            <div className="flex items-start gap-4">
+                                                <div className="text-[#135bec] mt-1">
+                                                    <ClipboardList className="w-5 h-5 opacity-40" />
+                                                </div>
+                                                <p className="text-sm text-slate-600 font-medium leading-relaxed italic">
+                                                    <span className="font-black text-[#135bec] not-italic mr-2">Motif :</span>
+                                                    "{req.reason || "Renouvellement annuel"}"
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Actions ergonomiques */}
+                                        <div className="pt-4 flex gap-5">
+                                            <Button
+                                                variant="outline"
+                                                className="flex-1 border-slate-200 text-red-500 rounded-[24px] h-16 text-lg font-black hover:bg-red-50 hover:border-red-100 active:scale-95 transition-all shadow-sm"
+                                                onClick={() => handleReject(req.id, req.employeeName)}
+                                            >
+                                                Refuser
+                                            </Button>
+                                            <Button
+                                                className="flex-[2] bg-[#135bec] hover:bg-[#0045bd] text-white rounded-[24px] h-16 text-lg font-black shadow-xl shadow-blue-200 active:scale-95 transition-all flex items-center justify-center gap-3"
+                                                onClick={() => handleValidate(req.id, req.employeeName)}
+                                            >
+                                                <Check className="w-7 h-7" />
+                                                Valider
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </TabsContent>
 
 
 
                 <TabsContent value="history">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                            <div>
-                                <CardTitle>Historique des demandes</CardTitle>
-                                <CardDescription>Consultez l'historique des demandes traitées.</CardDescription>
-                            </div>
-                            {requests.filter(r => r.status !== "Pending").length > 0 && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-brand border-brand/20 hover:bg-brand/5"
-                                    onClick={exportToCSV}
-                                >
-                                    <Download className="w-4 h-4 mr-2" /> Exporter CSV
-                                </Button>
-                            )}
-                        </CardHeader>
-
-                        <div className="flex gap-4 mb-6 px-6">
-                            <div className="flex-1">
-                                <Input
-                                    placeholder="Rechercher par collaborateur ou équipement..."
-                                    value={historySearchTerm}
-                                    onChange={(e) => setHistorySearchTerm(e.target.value)}
-                                    className="bg-white"
-                                />
-                            </div>
-                            <Select value={historyFilterCategory} onValueChange={setHistoryFilterCategory}>
-                                <SelectTrigger className="w-[200px] bg-white">
-                                    <SelectValue placeholder="Catégorie" />
-                                </SelectTrigger>
-                                <SelectContent bg-white>
-                                    <SelectItem value="ALL">Toutes catégories</SelectItem>
-                                    {Array.from(new Set(requests.flatMap(r => r.items.map(i => i.category)))).sort().map(cat => (
-                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Collaborateur</TableHead>
-                                        <TableHead>Équipement</TableHead>
-                                        <TableHead>Taille</TableHead>
-                                        <TableHead>Coût</TableHead>
-                                        <TableHead>Statut & Traitement</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {currentHistoryItems.map(req => (
-                                        <TableRow key={req.id}>
-                                            <TableCell className="text-xs text-gray-500">
-                                                {new Date(req.createdAt).toLocaleDateString("fr-FR")}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="font-medium text-sm">{req.employeeName}</div>
-                                                <div className="text-[10px] text-gray-400 uppercase font-bold">{req.service}</div>
-                                            </TableCell>
-                                            <TableCell colSpan={2}>
-                                                <div className="space-y-1">
-                                                    {req.items.map((item, i) => (
-                                                        <div key={i} className="flex items-center gap-2 text-sm">
-                                                            <span>{item.category}</span>
-                                                            <Badge variant="outline" className="text-[10px] h-5">{item.size}</Badge>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="text-xs font-mono">
-                                                    {req.items.reduce((sum, item) => sum + item.snapshottedPrice, 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-1">
-                                                    <Badge className={`w-fit text-[10px] font-black uppercase tracking-widest ${req.status === "Ordered" ? "bg-green-100 text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"
-                                                        }`}>
-                                                        {req.status === "Ordered" ? "Validé" : "Refusé"}
-                                                    </Badge>
-                                                    {req.validatedBy && (
-                                                        <div className="text-[9px] text-gray-500 italic">
-                                                            Par {req.validatedBy}
-                                                            {req.validatedAt && ` le ${new Date(req.validatedAt).toLocaleDateString("fr-FR")}`}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {filteredHistory.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="h-64 text-center">
-                                                <div className="flex flex-col items-center justify-center text-gray-500">
-                                                    <div className="bg-gray-100 p-4 rounded-full mb-3">
-                                                        <History className="w-8 h-8 text-gray-400" />
-                                                    </div>
-                                                    <p className="font-medium text-lg">Aucun historique trouvé</p>
-                                                    <p className="text-sm text-gray-400 mt-1">Essayez de modifier vos filtres de recherche.</p>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-
-                            {/* Pagination Controls */}
-                            {totalHistoryPages > 1 && (
-                                <div className="mt-4">
-                                    <Pagination>
-                                        <PaginationContent>
-                                            <PaginationItem>
-                                                <PaginationPrevious
-                                                    onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
-                                                    className={`cursor-pointer ${historyPage === 1 ? "pointer-events-none opacity-50" : ""}`}
-                                                />
-                                            </PaginationItem>
-
-                                            {Array.from({ length: totalHistoryPages }, (_, i) => i + 1).map((page) => (
-                                                <PaginationItem key={page}>
-                                                    <PaginationLink
-                                                        isActive={page === historyPage}
-                                                        onClick={() => setHistoryPage(page)}
-                                                        className="cursor-pointer"
-                                                    >
-                                                        {page}
-                                                    </PaginationLink>
-                                                </PaginationItem>
-                                            ))}
-
-                                            <PaginationItem>
-                                                <PaginationNext
-                                                    onClick={() => setHistoryPage(p => Math.min(totalHistoryPages, p + 1))}
-                                                    className={`cursor-pointer ${historyPage === totalHistoryPages ? "pointer-events-none opacity-50" : ""}`}
-                                                />
-                                            </PaginationItem>
-                                        </PaginationContent>
-                                    </Pagination>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <HistoryView requests={requests} />
                 </TabsContent>
 
 
 
                 <TabsContent value="employees">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Suivi par Collaborateur</CardTitle>
-                            <CardDescription>Vue d'ensemble des EPI distribués pour chaque employé.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Collaborateur</TableHead>
-                                        <TableHead>Service</TableHead>
-                                        <TableHead>Total EPI</TableHead>
-                                        <TableHead>Détail des équipements</TableHead>
-                                        <TableHead className="text-right">Coût Total</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {Object.values(requests.filter(r => r.status === "Ordered").reduce((acc: any, req) => {
-                                        if (!acc[req.employeeName]) {
-                                            acc[req.employeeName] = { 
-                                                name: req.employeeName, 
-                                                service: req.service, 
-                                                totalItems: 0, 
-                                                totalCost: 0, 
-                                                items: [] as string[] 
-                                            }
-                                        }
-                                        req.items.forEach(item => {
-                                            acc[req.employeeName].totalItems += 1
-                                            acc[req.employeeName].totalCost += item.snapshottedPrice
-                                            acc[req.employeeName].items.push(`${item.category} (${item.size})`)
-                                        })
-                                        return acc
-                                    }, {})).sort((a: any, b: any) => b.totalItems - a.totalItems).map((emp: any) => (
-                                        <TableRow key={emp.name}>
-                                            <TableCell className="font-medium">{emp.name}</TableCell>
-                                            <TableCell><Badge variant="outline" className="text-[10px]">{emp.service}</Badge></TableCell>
-                                            <TableCell className="font-bold text-lg">{emp.totalItems}</TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {Array.from(new Set(emp.items)).map((i: any, idx) => (
-                                                        <Badge key={idx} variant="secondary" className="text-[10px] line-clamp-1">{i}</Badge>
-                                                    ))}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono font-bold text-brand">
-                                                {emp.totalCost.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {requests.filter(r => r.status === "Ordered").length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="h-64 text-center text-gray-500">
-                                                Aucune donnée disponible.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                    <CollaboratorsView requests={requests} />
                 </TabsContent>
 
 
@@ -758,11 +552,11 @@ export default function ManagerDashboard({
                             />
                         </div>
                         <Select value={filterCategory} onValueChange={setFilterCategory}>
-                            <SelectTrigger className="w-[200px] bg-white">
+                            <SelectTrigger className="w-[180px] bg-white border-0 shadow-sm rounded-xl">
                                 <SelectValue placeholder="Catégorie" />
                             </SelectTrigger>
-                            <SelectContent bg-white>
-                                <SelectItem value="ALL">Toutes catégories</SelectItem>
+                            <SelectContent className="bg-white rounded-xl border-gray-100 shadow-xl">
+                                <SelectItem value="ALL">Toutes les catégories</SelectItem>
                                 {Array.from(new Set(stock.map(i => i.category))).map(cat => (
                                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                 ))}
@@ -770,103 +564,164 @@ export default function ManagerDashboard({
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {currentStockItems.map(item => (
-                            <Card key={item.id} className="overflow-hidden">
-                                <CardHeader className="border-b bg-gray-50/50">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <CardTitle>{item.label}</CardTitle>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <CardDescription className="font-mono text-brand font-bold bg-brand/5 px-2 py-0.5 rounded">
-                                                    {item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                                                </CardDescription>
-                                                <CardDescription>• {item.category}</CardDescription>
-                                                {Object.values(item.stock).some(q => q < item.minThreshold) && (
-                                                    <Badge className="bg-red-500 hover:bg-red-600 animate-pulse h-5 text-[9px] font-black uppercase tracking-tighter">Stock Bas</Badge>
+                    <div className="grid grid-cols-1 gap-6 pb-32 max-w-md mx-auto">
+                        {filteredStock.map((sku, index) => {
+                            const isLow = sku.quantity < sku.minThreshold
+                            const progress = Math.min(100, Math.round((sku.quantity / (sku.minThreshold * 2)) * 100))
+                            
+                            return (
+                                <Card key={`${sku.id}-${sku.size}`} className="overflow-hidden border-0 shadow-2xl bg-white rounded-[40px] transition-all hover:shadow-blue-900/5 group">
+                                    <div className="p-6">
+                                        {/* Top Section: Title & Status */}
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="space-y-1">
+                                                <h3 className="text-xl font-black text-slate-800 leading-tight tracking-tight">
+                                                    {sku.label}
+                                                </h3>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-bold text-slate-400 capitalize">Taille: {sku.size}</span>
+                                                </div>
+                                            </div>
+                                            {isLow && (
+                                                <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                                    Critique
+                                                </Badge>
+                                            )}
+                                        </div>
+
+                                        {/* Middle Section: Image & Stats */}
+                                        <div className="flex items-center justify-between gap-6 mb-8 mt-2">
+                                            <div className="relative w-32 h-32 rounded-3xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100 flex-shrink-0">
+                                                <img 
+                                                    src={sku.image} 
+                                                    alt={sku.label}
+                                                    className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+                                                />
+                                            </div>
+
+                                            <div className="flex-1 space-y-3">
+                                                <div className="relative w-24 h-24 mx-auto">
+                                                    <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+                                                        <circle
+                                                            className="text-slate-100"
+                                                            strokeWidth="10"
+                                                            stroke="currentColor"
+                                                            fill="transparent"
+                                                            r="40"
+                                                            cx="50"
+                                                            cy="50"
+                                                        />
+                                                        <circle
+                                                            className={isLow ? "text-red-500" : "text-brand"}
+                                                            strokeWidth="10"
+                                                            strokeDasharray={251.2}
+                                                            strokeDashoffset={251.2 - (251.2 * progress) / 100}
+                                                            strokeLinecap="round"
+                                                            stroke="currentColor"
+                                                            fill="transparent"
+                                                            r="40"
+                                                            cx="50"
+                                                            cy="50"
+                                                        />
+                                                    </svg>
+                                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                        <span className="text-xl font-black text-slate-800">{progress}%</span>
+                                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Stock</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Physical Metadata */}
+                                        <div className="grid grid-cols-1 gap-2 mb-8 bg-slate-50/50 p-4 rounded-3xl border border-slate-100/50">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Référence</span>
+                                                {editingSku?.id === sku.id && editingSku?.size === sku.size && editingSku?.field === 'ref' ? (
+                                                    <Input
+                                                        autoFocus
+                                                        className="h-6 text-xs font-black text-slate-700 font-mono text-right bg-white border-brand w-24 p-1"
+                                                        value={editMetadataValue}
+                                                        onChange={(e) => setEditMetadataValue(e.target.value)}
+                                                        onBlur={() => handleSkuMetadataUpdate(sku.id, sku.size, 'ref', editMetadataValue)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleSkuMetadataUpdate(sku.id, sku.size, 'ref', editMetadataValue)}
+                                                    />
+                                                ) : (
+                                                    <span 
+                                                        className="text-xs font-black text-slate-700 font-mono cursor-pointer hover:text-brand transition-colors"
+                                                        onClick={() => {
+                                                            setEditingSku({ id: sku.id, size: sku.size, field: 'ref' })
+                                                            setEditMetadataValue(sku.ref)
+                                                        }}
+                                                    >
+                                                        {sku.ref}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Emplacement</span>
+                                                {editingSku?.id === sku.id && editingSku?.size === sku.size && editingSku?.field === 'location' ? (
+                                                    <Input
+                                                        autoFocus
+                                                        className="h-6 text-xs font-black text-brand font-mono text-right bg-white border-brand w-24 p-1"
+                                                        value={editMetadataValue}
+                                                        onChange={(e) => setEditMetadataValue(e.target.value)}
+                                                        onBlur={() => handleSkuMetadataUpdate(sku.id, sku.size, 'location', editMetadataValue)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleSkuMetadataUpdate(sku.id, sku.size, 'location', editMetadataValue)}
+                                                    />
+                                                ) : (
+                                                    <span 
+                                                        className="text-xs font-black text-brand font-mono cursor-pointer hover:underline"
+                                                        onClick={() => {
+                                                            setEditingSku({ id: sku.id, size: sku.size, field: 'location' })
+                                                            setEditMetadataValue(sku.location)
+                                                        }}
+                                                    >
+                                                        {sku.location}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
-                                        {editingStockId === item.id ? (
-                                            <div className="flex gap-2">
-                                                <Button size="sm" variant="ghost" onClick={() => setEditingStockId(null)}><X className="w-4 h-4" /></Button>
-                                                <Button size="sm" onClick={() => saveStock(item.id)}><Save className="w-4 h-4" /></Button>
-                                            </div>
-                                        ) : (
-                                            <Button size="sm" variant="ghost" onClick={() => startEditing(item)}>
-                                                <Settings className="w-4 h-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="pt-6">
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {sortSizes(item.stock ? Object.keys(item.stock) : []).map((size) => {
-                                                const qty = item.stock?.[size] || 0
-                                                const isLow = qty < item.minThreshold
-                                                return (
-                                                    <div key={size} className={`p-2 rounded-lg border text-center ${isLow ? 'bg-red-50 border-red-200' : 'bg-white'}`}>
-                                                        <div className="text-[10px] text-gray-400 uppercase font-bold">{size}</div>
-                                                        {editingStockId === item.id ? (
-                                                            <Input
-                                                                type="number"
-                                                                className="h-7 text-center px-1 mt-1"
-                                                                value={editValues[size]}
-                                                                onChange={e => setEditValues({ ...editValues, [size]: Number(e.target.value) })}
-                                                            />
-                                                        ) : (
-                                                            <div className={`text-lg font-bold ${isLow ? 'text-red-700' : 'text-gray-900'}`}>{qty}</div>
-                                                        )}
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                        {Object.values(item.stock || {}).some((q: any) => q < item.minThreshold) && (
-                                            <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 p-2 rounded-lg">
-                                                <Check className="w-3 h-3 rotate-180" /> Stock critique : Réapprovisionnement nécessaire.
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
 
-                    {/* Pagination Controls Inventory */}
-                    {totalInventoryPages > 1 && (
-                        <div className="mt-8">
-                            <Pagination>
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <PaginationPrevious
-                                            onClick={() => setInventoryPage(p => Math.max(1, p - 1))}
-                                            className={`cursor-pointer ${inventoryPage === 1 ? "pointer-events-none opacity-50" : ""}`}
-                                        />
-                                    </PaginationItem>
-
-                                    {Array.from({ length: totalInventoryPages }, (_, i) => i + 1).map((page) => (
-                                        <PaginationItem key={page}>
-                                            <PaginationLink
-                                                isActive={page === inventoryPage}
-                                                onClick={() => setInventoryPage(page)}
-                                                className="cursor-pointer"
+                                        {/* Action Control Bar */}
+                                        <div className="bg-slate-100 rounded-full p-2 flex items-center justify-between shadow-inner h-20">
+                                            <Button 
+                                                size="icon" 
+                                                variant="ghost" 
+                                                className="w-16 h-16 rounded-full bg-brand shadow-lg hover:bg-brand/90 transition-all active:scale-95 text-white disabled:opacity-20"
+                                                onClick={() => handleAdjustStock(sku.id, sku.size, -1)}
+                                                disabled={sku.quantity === 0}
                                             >
-                                                {page}
-                                            </PaginationLink>
-                                        </PaginationItem>
-                                    ))}
+                                                <Minus className="w-8 h-8 font-black" />
+                                            </Button>
 
-                                    <PaginationItem>
-                                        <PaginationNext
-                                            onClick={() => setInventoryPage(p => Math.min(totalInventoryPages, p + 1))}
-                                            className={`cursor-pointer ${inventoryPage === totalInventoryPages ? "pointer-events-none opacity-50" : ""}`}
-                                        />
-                                    </PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
-                        </div>
-                    )}
+                                            <div className="flex flex-col items-center flex-1">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-[-2px]">Actuel</span>
+                                                <input
+                                                    type="number"
+                                                    value={sku.quantity}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || 0
+                                                        handleAdjustStock(sku.id, sku.size, val - sku.quantity)
+                                                    }}
+                                                    className="w-20 text-center bg-transparent border-0 focus:ring-0 text-3xl font-black text-slate-900 p-0"
+                                                />
+                                            </div>
+
+                                            <Button 
+                                                size="icon" 
+                                                variant="ghost" 
+                                                className="w-16 h-16 rounded-full bg-brand shadow-lg hover:bg-brand/90 transition-all active:scale-95 text-white"
+                                                onClick={() => handleAdjustStock(sku.id, sku.size, 1)}
+                                            >
+                                                <Plus className="w-8 h-8 font-black" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Card>
+                            )
+                        })}
+                    </div>
                 </TabsContent>
 
 
@@ -876,60 +731,14 @@ export default function ManagerDashboard({
 
                 {userRole === "ADMIN" && (
                     <TabsContent value="audit">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Journal d'Audit - Super Admin</CardTitle>
-                                <CardDescription>Tracé complet des actions effectuées sur la plateforme.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Date & Heure</TableHead>
-                                            <TableHead>Utilisateur</TableHead>
-                                            <TableHead>Action</TableHead>
-                                            <TableHead>Détails</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {initialAuditLogs.map(log => (
-                                            <TableRow key={log.id}>
-                                                <TableCell className="text-xs font-mono">
-                                                    {new Date(log.createdAt).toLocaleString("fr-FR")}
-                                                </TableCell>
-                                                <TableCell className="font-medium text-sm">
-                                                    {log.userName}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-tighter">
-                                                        {log.action}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-[10px] text-gray-500 max-w-[300px] truncate">
-                                                    {log.action === "VALIDATE_REQUEST" && `Validé : ${log.details.employeeName}`}
-                                                    {log.action === "REJECT_REQUEST" && `Refusé : ${log.details.employeeName}`}
-                                                    {log.action === "UPDATE_STOCK" && `Stock mod. : ${log.details.category} (${log.details.size}) ${log.details.oldQuantity} -> ${log.details.newQuantity}`}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                        {initialAuditLogs.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={4} className="h-64 text-center text-gray-400 italic">
-                                                    Aucune action enregistrée pour le moment.
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
+                        <AuditLogView logs={initialAuditLogs} />
                     </TabsContent>
                 )}
 
             </Tabs>
         </div>
             {/* World-Class Mobile Bottom Navigation Dock */}
-            <div className="md:hidden fixed bottom-6 left-4 right-4 z-50">
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-4 max-w-md">
                 <div className="bg-white/95 backdrop-blur-xl rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/20 p-2 flex items-center justify-between mx-auto max-w-md">
                     {navItems.filter(i => i.isPrimary).map((item) => {
                         const isActive = activeTab === item.id;
@@ -1008,6 +817,9 @@ export default function ManagerDashboard({
                     onClick={() => setShowMoreMenu(false)}
                 />
             )}
+            
+            {/* AI Assistant Chatbot */}
+            <AdminChatWidget />
         </div>
     )
 }

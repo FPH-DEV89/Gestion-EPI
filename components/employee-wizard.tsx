@@ -93,14 +93,18 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
     return (
         <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-10">
             {/* Stitch Wizard Header (Screenshot 4) */}
-            <div className="bg-[#135bec] text-white pt-10 pb-20 px-8 rounded-b-[40px] shadow-lg mb-8">
+            <div className="bg-[#135bec] text-white pt-10 pb-20 px-8 rounded-b-[40px] shadow-lg mb-8 relative">
                 <div className="flex justify-between items-center mb-6">
                     <Button variant="ghost" className="text-white hover:bg-white/10 p-2" onClick={() => window.location.reload()}>
                          <ChevronLeft className="w-6 h-6" />
                     </Button>
-                    <div className="text-center flex-1">
-                        <h1 className="text-xl font-black tracking-tight uppercase">Demande EPI</h1>
-                        <p className="text-blue-100/70 text-[10px] font-bold tracking-widest uppercase">STEF EPI Manager</p>
+                    <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+                        <img 
+                            src="/logo-stef.png" 
+                            alt="STEF" 
+                            className="h-8 w-auto object-contain brightness-0 invert" 
+                        />
+                        <span className="text-[10px] font-bold tracking-[0.3em] uppercase mt-1 opacity-70">EPI Manager</span>
                     </div>
                     <Link href="/admin">
                         <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors cursor-pointer">

@@ -222,4 +222,52 @@ export async function updateStock(categoryId: string, size: string, quantity: nu
         return { success: false, error: "Erreur lors de la mise à jour du stock" };
     }
 }
+export async function updateSkuMetadata(categoryId: string, size: string, ref: string, location: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id || (session.user as any).role !== "ADMIN") {
+            return { success: false, error: "Non autorisé. Accès administrateur requis." };
+        }
 
+        const success = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const stockItem = await tx.stockItem.findUnique({
+                where: { id: categoryId },
+            });
+
+            if (!stockItem) return null;
+
+            const existingMetadata = (stockItem.skuMetadata as Record<string, any>) || {};
+            const newMetadata = {
+                ...existingMetadata,
+                [size]: {
+                    ...existingMetadata[size],
+                    ref,
+                    location
+                }
+            };
+
+            await tx.stockItem.update({
+                where: { id: categoryId },
+                data: { skuMetadata: newMetadata },
+            });
+
+            await recordAuditLog(tx, session!.user!.id as string, "UPDATE_SKU_METADATA", {
+                category: stockItem.category,
+                size,
+                ref,
+                location
+            });
+
+            return true;
+        });
+
+        if (!success) return { success: false, error: "Équipement introuvable" };
+
+        revalidatePath("/");
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update SKU metadata:", error);
+        return { success: false, error: "Erreur lors de la mise à jour des métadonnées" };
+    }
+}
