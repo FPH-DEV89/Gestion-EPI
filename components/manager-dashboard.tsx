@@ -358,10 +358,10 @@ export default function ManagerDashboard({
                     <Link href="/">
                         <Button 
                             variant="ghost" 
-                            className="text-white hover:bg-white/10 p-2 relative rounded-full flex items-center gap-2"
+                            size="icon"
+                            className="text-white hover:bg-white/20 rounded-full w-10 h-10"
                         >
                             <ChevronLeft className="w-6 h-6" />
-                            <span className="text-sm font-bold">Retour</span>
                         </Button>
                     </Link>
                     
