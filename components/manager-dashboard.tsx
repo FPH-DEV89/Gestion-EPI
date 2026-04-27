@@ -84,6 +84,14 @@ interface AuditLog {
     createdAt: string
 }
 
+interface AuditLog {
+    id: string
+    userName: string
+    action: string
+    details: any
+    createdAt: string
+}
+
 export default function ManagerDashboard({
     initialRequests,
     initialStock,
