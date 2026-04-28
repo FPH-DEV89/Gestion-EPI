@@ -95,7 +95,7 @@ async function recordAuditLog(tx: Prisma.TransactionClient, userId: string, acti
     });
 }
 
-export async function validateRequest(requestId: string) {
+export async function validateRequest(requestId: string, signatureData?: string) {
     try {
         const session = await auth();
         if (!session?.user?.id || (session.user as any).role !== "ADMIN") {
@@ -150,14 +150,21 @@ export async function validateRequest(requestId: string) {
                 data: {
                     status: "Ordered",
                     validatedById: session!.user!.id as string,
-                    validatedAt: new Date()
+                    validatedAt: new Date(),
+                    // Signature de remise (si fournie)
+                    ...(signatureData ? {
+                        signatureData,
+                        signedAt: new Date(),
+                        deliveredById: session!.user!.id as string,
+                    } : {}),
                 },
             });
 
             await recordAuditLog(tx, session!.user!.id as string, "VALIDATE_REQUEST", {
                 requestId,
                 employeeName: request.employeeName,
-                items: request.items.map(i => ({ category: i.category, size: i.size }))
+                items: request.items.map(i => ({ category: i.category, size: i.size })),
+                signed: !!signatureData,
             });
         });
 

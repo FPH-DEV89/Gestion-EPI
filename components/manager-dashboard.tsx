@@ -15,7 +15,7 @@ import { sortSizes } from "@/lib/utils"
 import { 
     Package, ClipboardList, Settings, Save, X, Check, History, Download, 
     BarChart3, ShieldAlert, Users, LogOut, ChevronLeft, MoreHorizontal,
-    Bell, Plus, Minus
+    Bell, Plus, Minus, PenLine
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
@@ -24,6 +24,7 @@ import AuditLogView from "./audit-log-view"
 import CollaboratorsView from "./collaborators-view"
 import { useToast } from "@/components/ui/use-toast"
 import { AdminChatWidget } from "./admin-chat"
+import SignaturePad from "./signature-pad"
 
 import {
     AlertDialog,
@@ -176,6 +177,10 @@ export default function ManagerDashboard({
     const [editMetadataValue, setEditMetadataValue] = useState("")
     const { toast } = useToast()
 
+    // Signature dialog state
+    const [signatureDialog, setSignatureDialog] = useState<{ open: boolean, requestId: string, employeeName: string } | null>(null)
+    const [isSubmittingSignature, setIsSubmittingSignature] = useState(false)
+
     const navItems = [
         { id: 'requests', label: 'Demandes', icon: ClipboardList, isPrimary: true },
         { id: 'inventory', label: 'Stock', icon: Package, isPrimary: true },
@@ -190,16 +195,22 @@ export default function ManagerDashboard({
 
     if (!isAuthorized) return null
 
-    const handleValidate = async (id: string, employeeName: string) => {
-        setIsRefreshing(true)
-        const res = await validateRequest(id)
+    // Opens the signature dialog instead of validating directly
+    const handleValidate = (id: string, employeeName: string) => {
+        setSignatureDialog({ open: true, requestId: id, employeeName })
+    }
+
+    // Called when the employee confirms their signature
+    const handleSignatureConfirm = async (signatureData: string) => {
+        if (!signatureDialog) return
+        setIsSubmittingSignature(true)
+        const res = await validateRequest(signatureDialog.requestId, signatureData)
         if (res.success) {
             toast({
-                title: "Demande validée",
-                description: `La demande de ${employeeName} a été validée avec succès.`,
+                title: "✅ Remise confirmée",
+                description: `${signatureDialog.employeeName} a signé la réception de ses EPI.`,
                 className: "bg-emerald-50 border-emerald-200 text-emerald-800",
             })
-            // router.refresh()
         } else {
             toast({
                 variant: "destructive",
@@ -207,7 +218,8 @@ export default function ManagerDashboard({
                 description: res.error || "Une erreur est survenue.",
             })
         }
-        setIsRefreshing(false)
+        setIsSubmittingSignature(false)
+        setSignatureDialog(null)
     }
 
     const handleReject = async (id: string, employeeName: string) => {
@@ -509,8 +521,8 @@ export default function ManagerDashboard({
                                                 className="flex-[2] bg-[#135bec] hover:bg-[#0045bd] text-white rounded-[24px] h-16 text-lg font-black shadow-xl shadow-blue-200 active:scale-95 transition-all flex items-center justify-center gap-3"
                                                 onClick={() => handleValidate(req.id, req.employeeName)}
                                             >
-                                                <Check className="w-7 h-7" />
-                                                Valider
+                                                <PenLine className="w-6 h-6" />
+                                                Valider & Signer
                                             </Button>
                                         </div>
                                     </div>
@@ -829,6 +841,18 @@ export default function ManagerDashboard({
             
             {/* AI Assistant Chatbot */}
             <AdminChatWidget />
+
+            {/* Signature Dialog */}
+            <AlertDialog open={!!signatureDialog?.open} onOpenChange={(open) => { if (!open) setSignatureDialog(null) }}>
+                <AlertDialogContent className="max-w-md mx-auto rounded-[36px] border-none shadow-2xl p-8">
+                    <SignaturePad
+                        employeeName={signatureDialog?.employeeName || ""}
+                        onConfirm={handleSignatureConfirm}
+                        onCancel={() => setSignatureDialog(null)}
+                        isSubmitting={isSubmittingSignature}
+                    />
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
