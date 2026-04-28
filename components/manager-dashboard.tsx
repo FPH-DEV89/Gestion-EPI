@@ -25,6 +25,7 @@ import CollaboratorsView from "./collaborators-view"
 import { useToast } from "@/components/ui/use-toast"
 import { AdminChatWidget } from "./admin-chat"
 import SignaturePad from "./signature-pad"
+import { addOfflineAction, getOfflineActions, removeOfflineAction, getOfflineQueueCount, OfflineAction } from "@/app/lib/offline-queue"
 
 import {
     AlertDialog,
@@ -181,6 +182,11 @@ export default function ManagerDashboard({
     const [signatureDialog, setSignatureDialog] = useState<{ open: boolean, requestId: string, employeeName: string } | null>(null)
     const [isSubmittingSignature, setIsSubmittingSignature] = useState(false)
 
+    // Offline sync state
+    const [isOnline, setIsOnline] = useState(true)
+    const [offlineQueueCount, setOfflineQueueCount] = useState(0)
+    const [isSyncing, setIsSyncing] = useState(false)
+
     const navItems = [
         { id: 'requests', label: 'Demandes', icon: ClipboardList, isPrimary: true },
         { id: 'inventory', label: 'Stock', icon: Package, isPrimary: true },
@@ -204,6 +210,35 @@ export default function ManagerDashboard({
     const handleSignatureConfirm = async (signatureData: string) => {
         if (!signatureDialog) return
         setIsSubmittingSignature(true)
+
+        if (!isOnline) {
+            // Save locally if offline
+            await addOfflineAction({
+                id: signatureDialog.requestId,
+                type: 'VALIDATE_REQUEST',
+                payload: {
+                    requestId: signatureDialog.requestId,
+                    signatureData,
+                    employeeName: signatureDialog.employeeName
+                },
+                timestamp: Date.now()
+            })
+            
+            // Update local state immediately for instant feedback
+            setRequests(prev => prev.map(req => req.id === signatureDialog.requestId ? { ...req, status: "Ordered" } : req))
+            setOfflineQueueCount(prev => prev + 1)
+            
+            toast({
+                title: "💾 Sauvegardé hors-ligne",
+                description: `La demande de ${signatureDialog.employeeName} sera synchronisée au retour du réseau.`,
+                className: "bg-blue-50 border-blue-200 text-blue-800",
+            })
+            
+            setIsSubmittingSignature(false)
+            setSignatureDialog(null)
+            return
+        }
+
         const res = await validateRequest(signatureDialog.requestId, signatureData)
         if (res.success) {
             toast({
@@ -221,6 +256,81 @@ export default function ManagerDashboard({
         setIsSubmittingSignature(false)
         setSignatureDialog(null)
     }
+
+    // Sync offline actions
+    const syncOfflineActions = async () => {
+        if (isSyncing) return
+        setIsSyncing(true)
+        
+        try {
+            const actions = await getOfflineActions()
+            if (actions.length === 0) {
+                setOfflineQueueCount(0)
+                setIsSyncing(false)
+                return
+            }
+            
+            toast({
+                title: "🔄 Synchronisation...",
+                description: `${actions.length} action(s) en cours d'envoi.`,
+            })
+
+            let successCount = 0
+            for (const action of actions) {
+                if (action.type === 'VALIDATE_REQUEST') {
+                    const res = await validateRequest(action.payload.requestId, action.payload.signatureData)
+                    if (res.success) {
+                        await removeOfflineAction(action.id)
+                        successCount++
+                    } else if (res.error?.includes("introuvable")) {
+                        // Request already deleted or invalid, remove from queue
+                        await removeOfflineAction(action.id)
+                    }
+                }
+            }
+
+            const newCount = await getOfflineQueueCount()
+            setOfflineQueueCount(newCount)
+
+            if (successCount > 0) {
+                toast({
+                    title: "✅ Synchronisation terminée",
+                    description: `${successCount} validation(s) hors-ligne synchronisée(s).`,
+                    className: "bg-emerald-50 border-emerald-200 text-emerald-800",
+                })
+            }
+        } catch (error) {
+            console.error("Erreur lors de la synchronisation:", error)
+        } finally {
+            setIsSyncing(false)
+        }
+    }
+
+    // Network status listener & initial sync
+    useEffect(() => {
+        // Set initial state
+        setIsOnline(navigator.onLine)
+        getOfflineQueueCount().then(setOfflineQueueCount)
+
+        const handleOnline = () => {
+            setIsOnline(true)
+            syncOfflineActions()
+        }
+        const handleOffline = () => setIsOnline(false)
+
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+
+        // Try syncing initially if online
+        if (navigator.onLine) {
+            syncOfflineActions()
+        }
+
+        return () => {
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
+        }
+    }, [])
 
     const handleReject = async (id: string, employeeName: string) => {
         setIsRefreshing(true)
@@ -423,9 +533,30 @@ export default function ManagerDashboard({
 
                 <TabsContent value="requests" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="max-w-3xl mx-auto space-y-6 pb-24">
-                        <div className="flex items-center justify-between px-4 mb-2">
+                        <div className="flex items-start justify-between px-4 mb-2">
                             <div>
-                                <h2 className="text-2xl font-black text-slate-800">Demandes en cours</h2>
+                                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                                    Demandes en cours
+                                    {!isOnline && (
+                                        <Badge variant="secondary" className="bg-orange-50 text-orange-600 rounded-lg px-2 py-0.5 text-[10px] uppercase tracking-wide gap-1 border border-orange-200 flex items-center shadow-sm ml-2">
+                                            <span className="relative flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                                            </span>
+                                            Hors Ligne
+                                        </Badge>
+                                    )}
+                                    {offlineQueueCount > 0 && (
+                                        <Badge variant="secondary" className="bg-blue-50 text-blue-600 rounded-lg px-2 py-0.5 text-[10px] uppercase tracking-wide gap-1 border border-blue-200 flex items-center shadow-sm cursor-pointer hover:bg-blue-100 transition-colors" onClick={isOnline ? syncOfflineActions : undefined}>
+                                            {isSyncing ? (
+                                                <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+                                            ) : (
+                                                <Save className="w-3 h-3" />
+                                            )}
+                                            {offlineQueueCount} en attente
+                                        </Badge>
+                                    )}
+                                </h2>
                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Flux d'approbation rapide</p>
                             </div>
                             <Button
