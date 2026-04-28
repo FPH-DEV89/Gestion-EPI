@@ -43,7 +43,9 @@ export default async function AdminPage() {
             status: r.status,
             createdAt: r.createdAt.toISOString(),
             validatedBy: r.validatedBy?.name || null,
-            validatedAt: r.validatedAt ? r.validatedAt.toISOString() : null
+            validatedAt: r.validatedAt ? r.validatedAt.toISOString() : null,
+            signatureData: r.signatureData,
+            signedAt: r.signedAt ? r.signedAt.toISOString() : null,
         }))
 
         const serializedStock = stock.map(s => ({

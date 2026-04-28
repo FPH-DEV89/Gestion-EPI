@@ -34,6 +34,8 @@ interface Request {
     createdAt: string
     validatedBy: string | null
     validatedAt: string | null
+    signatureData?: string | null
+    signedAt?: string | null
 }
 
 interface HistoryViewProps {
@@ -180,6 +182,18 @@ export default function HistoryView({ requests }: HistoryViewProps) {
                                                         </div>
                                                     ))}
                                                 </div>
+
+                                                {/* Signature Remise */}
+                                                {req.signatureData && (
+                                                    <div className="mt-4 p-3 bg-slate-50/50 rounded-2xl border border-slate-100 flex flex-col gap-2 w-full sm:w-auto">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                            Signature du collaborateur ✍️
+                                                        </span>
+                                                        <div className="bg-white border border-slate-200 rounded-xl p-2 w-full max-w-[200px] h-[80px] flex items-center justify-center shadow-sm">
+                                                            <img src={req.signatureData} alt={`Signature de ${req.employeeName}`} className="max-w-full max-h-full object-contain" />
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 {/* Meta Info Footer */}
                                                 <div className="flex items-center justify-between pt-4 border-t border-slate-50 mt-4">
