@@ -212,30 +212,39 @@ export default function ManagerDashboard({
         setIsSubmittingSignature(true)
 
         if (!isOnline) {
-            // Save locally if offline
-            await addOfflineAction({
-                id: signatureDialog.requestId,
-                type: 'VALIDATE_REQUEST',
-                payload: {
-                    requestId: signatureDialog.requestId,
-                    signatureData,
-                    employeeName: signatureDialog.employeeName
-                },
-                timestamp: Date.now()
-            })
-            
-            // Update local state immediately for instant feedback
-            setRequests(prev => prev.map(req => req.id === signatureDialog.requestId ? { ...req, status: "Ordered" } : req))
-            setOfflineQueueCount(prev => prev + 1)
-            
-            toast({
-                title: "💾 Sauvegardé hors-ligne",
-                description: `La demande de ${signatureDialog.employeeName} sera synchronisée au retour du réseau.`,
-                className: "bg-blue-50 border-blue-200 text-blue-800",
-            })
-            
-            setIsSubmittingSignature(false)
-            setSignatureDialog(null)
+            try {
+                // Save locally if offline
+                await addOfflineAction({
+                    id: signatureDialog.requestId,
+                    type: 'VALIDATE_REQUEST',
+                    payload: {
+                        requestId: signatureDialog.requestId,
+                        signatureData,
+                        employeeName: signatureDialog.employeeName
+                    },
+                    timestamp: Date.now()
+                })
+                
+                // Update local state immediately for instant feedback
+                setRequests(prev => prev.map(req => req.id === signatureDialog.requestId ? { ...req, status: "Ordered" } : req))
+                setOfflineQueueCount(prev => prev + 1)
+                
+                toast({
+                    title: "💾 Sauvegardé hors-ligne",
+                    description: `La demande de ${signatureDialog.employeeName} sera synchronisée au retour du réseau.`,
+                    className: "bg-blue-50 border-blue-200 text-blue-800",
+                })
+            } catch (error) {
+                console.error("Erreur de sauvegarde locale:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Erreur de stockage",
+                    description: "Impossible d'enregistrer la signature hors-ligne (espace disque plein ou mode navigation privée stricte).",
+                })
+            } finally {
+                setIsSubmittingSignature(false)
+                setSignatureDialog(null)
+            }
             return
         }
 
@@ -276,15 +285,24 @@ export default function ManagerDashboard({
             })
 
             let successCount = 0
+            let errorCount = 0
             for (const action of actions) {
                 if (action.type === 'VALIDATE_REQUEST') {
                     const res = await validateRequest(action.payload.requestId, action.payload.signatureData)
                     if (res.success) {
                         await removeOfflineAction(action.id)
                         successCount++
-                    } else if (res.error?.includes("introuvable")) {
-                        // Request already deleted or invalid, remove from queue
+                    } else if (res.error?.includes("introuvable") || res.error?.includes("épuisé")) {
+                        // Request deleted, invalid, or out of stock. Remove from queue to prevent infinite loop.
                         await removeOfflineAction(action.id)
+                        errorCount++
+                        toast({
+                            variant: "destructive",
+                            title: "Synchronisation échouée",
+                            description: `La demande de ${action.payload.employeeName} n'a pas pu être validée : ${res.error}`,
+                        })
+                    } else {
+                        // Other errors (e.g., 500) might be temporary, leave in queue.
                     }
                 }
             }
@@ -297,6 +315,12 @@ export default function ManagerDashboard({
                     title: "✅ Synchronisation terminée",
                     description: `${successCount} validation(s) hors-ligne synchronisée(s).`,
                     className: "bg-emerald-50 border-emerald-200 text-emerald-800",
+                })
+            } else if (errorCount > 0) {
+                 toast({
+                    variant: "destructive",
+                    title: "⚠️ Synchronisation partielle",
+                    description: `${errorCount} demande(s) ont été rejetées par le serveur (voir notifications précédentes).`,
                 })
             }
         } catch (error) {
