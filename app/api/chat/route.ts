@@ -2,11 +2,18 @@ import { xai } from '@ai-sdk/xai';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+    // Security: Block unauthenticated access to prevent API credit drain (Denial of Wallet)
+    const session = await auth();
+    if (!session?.user?.id || (session.user as any).role !== 'ADMIN') {
+        return new Response(JSON.stringify({ error: 'Non autorisé' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+
     const { messages } = await req.json();
 
     // Clean up frontend metadata to strictly match CoreMessage schema

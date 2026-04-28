@@ -1,7 +1,6 @@
 "use client"
-"use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -108,7 +107,8 @@ export default function ManagerDashboard({
     const [searchTerm, setSearchTerm] = useState("")
     const [filterCategory, setFilterCategory] = useState("ALL")
 
-    const flattenedStock = stock.flatMap(item => 
+    // Performance: memoize to avoid recalculating on every render/keystroke
+    const flattenedStock = useMemo(() => stock.flatMap(item => 
         Object.keys(item.stock).map(size => {
             const metadata = (item.skuMetadata as Record<string, any>)?.[size] || {}
             
@@ -131,15 +131,16 @@ export default function ManagerDashboard({
                 image
             }
         })
-    )
+    ), [stock])
 
-    const filteredStock = flattenedStock.filter(item => {
+    // Performance: memoize filtered results
+    const filteredStock = useMemo(() => flattenedStock.filter(item => {
         const matchesSearch = item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.ref.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = filterCategory === "ALL" || item.category === filterCategory
         return matchesSearch && matchesCategory
-    })
+    }), [flattenedStock, searchTerm, filterCategory])
 
     const [activeTab, setActiveTab] = useState("requests")
 

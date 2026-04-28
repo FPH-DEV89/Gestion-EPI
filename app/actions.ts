@@ -6,6 +6,19 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { z } from "zod";
+
+// Security: Strict input validation schema to prevent DoS via oversized payloads
+const createRequestSchema = z.object({
+    employeeName: z.string().min(1).max(100),
+    firstName: z.string().min(1).max(50),
+    service: z.string().min(1).max(50),
+    items: z.array(z.object({
+        category: z.string().min(1).max(100),
+        size: z.string().min(1).max(20),
+    })).min(1).max(20),
+    reason: z.string().min(1).max(500),
+});
 
 export async function createRequests(formData: {
     employeeName: string;
@@ -15,7 +28,12 @@ export async function createRequests(formData: {
     reason: string;
 }) {
     try {
-        const { firstName, employeeName, service, items, reason } = formData;
+        // Security: Validate & sanitize all input before DB insertion
+        const validated = createRequestSchema.safeParse(formData);
+        if (!validated.success) {
+            return { success: false, error: "Données invalides : " + validated.error.issues.map(i => i.message).join(", ") };
+        }
+        const { firstName, employeeName, service, items, reason } = validated.data;
         const fullName = `${firstName} ${employeeName}`;
 
         // Récupérer les prix actuels du stock pour chaque item
@@ -91,37 +109,40 @@ export async function validateRequest(requestId: string) {
 
         if (!request) return { success: false, error: "Demande introuvable" };
 
-        // Check stock for all items
-        for (const item of request.items) {
-            const stockItem = await prisma.stockItem.findFirst({
-                where: { category: item.category },
-            });
-
-            if (!stockItem) return { success: false, error: `Équipement ${item.category} introuvable` };
-
-            const stock = (stockItem.stock as Record<string, number>) || {};
-            const currentQuantity = stock[item.size] || 0;
-
-            if (currentQuantity <= 0) {
-                return { success: false, error: `Stock épuisé pour ${item.category} (${item.size})` };
-            }
-        }
+        // Performance + Resilience: All stock checks AND updates inside a single transaction
+        // This fixes the Race Condition (two simultaneous validations) AND eliminates N+1 queries
+        const categories = [...new Set(request.items.map(i => i.category))];
 
         await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            // Single batch query instead of N individual findFirst calls
+            const allStockItems = await tx.stockItem.findMany({
+                where: { category: { in: categories } },
+            });
+
+            const stockMap = new Map(allStockItems.map(s => [s.category, s]));
+
+            // Verify stock availability INSIDE the transaction (race condition fix)
             for (const item of request.items) {
-                const stockItem = await tx.stockItem.findFirst({
-                    where: { category: item.category },
-                });
-
-                if (stockItem) {
-                    const stock = (stockItem.stock as Record<string, number>) || {};
-                    const newStock = { ...stock, [item.size]: (stock[item.size] || 0) - 1 };
-
-                    await tx.stockItem.update({
-                        where: { id: stockItem.id },
-                        data: { stock: newStock }
-                    });
+                const stockItem = stockMap.get(item.category);
+                if (!stockItem) {
+                    throw new Error(`Équipement ${item.category} introuvable`);
                 }
+                const stock = (stockItem.stock as Record<string, number>) || {};
+                if ((stock[item.size] || 0) <= 0) {
+                    throw new Error(`Stock épuisé pour ${item.category} (${item.size})`);
+                }
+            }
+
+            // Decrement stock for each item
+            for (const item of request.items) {
+                const stockItem = stockMap.get(item.category)!;
+                const stock = (stockItem.stock as Record<string, number>) || {};
+                const newStock = { ...stock, [item.size]: (stock[item.size] || 0) - 1 };
+
+                await tx.stockItem.update({
+                    where: { id: stockItem.id },
+                    data: { stock: newStock }
+                });
             }
 
             await tx.request.update({
@@ -143,9 +164,13 @@ export async function validateRequest(requestId: string) {
         revalidatePath("/");
         revalidatePath("/admin");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to validate request:", error);
-        return { success: false, error: "Erreur lors de la validation" };
+        // Surface transaction errors (stock issues) as user-friendly messages
+        const message = error?.message?.includes('Stock épuisé') || error?.message?.includes('introuvable')
+            ? error.message
+            : "Erreur lors de la validation";
+        return { success: false, error: message };
     }
 }
 
