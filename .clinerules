@@ -1,0 +1,12 @@
+# Instructions de Développement pour les Assistants IA (Antigravity, Cursor, Cline...)
+
+## 🎯 Règle d'or de Clôture (Mise à jour du Contexte)
+- **OBLIGATION SYSTÉMATIQUE :** À la fin de chaque tâche, fonctionnalité ou modification majeure réussie, vous DEVEZ mettre à jour le fichier `PROJECT_SUMMARY.md` à la racine pour y inscrire de manière concise les changements d'architecture, les nouveaux composants et l'état de la QA.
+
+## 🇫🇷 Langue de Communication
+- Communiquez exclusivement en **français** avec l'utilisateur et rédigez les livrables/commentaires dans cette même langue.
+
+## 🧪 Assurance Qualité & Environnement
+- **Port de test E2E (Playwright) :** Utilisez exclusivement le **port 3005** pour Playwright afin de ne pas entrer en conflit avec les autres projets locaux (qui tournent sur le port 3000).
+- **Rigueur pré-commit (Husky) :** Avant chaque commit, assurez-vous que le projet compile proprement (`npx tsc --noEmit`) et que les tests unitaires passent (`npx vitest run`).
+- **Règle Initials utilisateur :** L'avatar utilisateur en haut à droite du tableau de bord utilise un parseur d'initiales dynamique (`userInitials`) basé sur le nom ou l'email du manager connecté.
