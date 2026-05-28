@@ -96,17 +96,40 @@ export default function ManagerDashboard({
     initialRequests,
     initialStock,
     initialAuditLogs = [],
-    userRole = "USER"
+    userRole = "USER",
+    userEmail = null,
+    userName = null
 }: {
     initialRequests: Request[],
     initialStock: StockItem[],
     initialAuditLogs?: AuditLog[],
-    userRole?: string
+    userRole?: string,
+    userEmail?: string | null,
+    userName?: string | null
 }) {
     const [requests, setRequests] = useState(initialRequests)
     const [stock, setStock] = useState(initialStock)
     const [searchTerm, setSearchTerm] = useState("")
     const [filterCategory, setFilterCategory] = useState("ALL")
+
+    const userInitials = useMemo(() => {
+        if (userName && userName.toLowerCase() !== "inconnu") {
+            const parts = userName.trim().split(/\s+/)
+            if (parts.length >= 2) {
+                return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
+            }
+            return parts[0].substring(0, 2).toUpperCase()
+        }
+        if (userEmail) {
+            const localPart = userEmail.split('@')[0]
+            const parts = localPart.split(/[._-]/)
+            if (parts.length >= 2) {
+                return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase()
+            }
+            return localPart.substring(0, 2).toUpperCase()
+        }
+        return "M"
+    }, [userName, userEmail])
 
     // Performance: memoize to avoid recalculating on every render/keystroke
     const flattenedStock = useMemo(() => stock.flatMap(item => 
@@ -586,8 +609,8 @@ export default function ManagerDashboard({
                         <Button variant="ghost" className="text-white hover:bg-white/10 p-2 rounded-full">
                             <MoreHorizontal className="w-6 h-6 rotate-90" />
                         </Button>
-                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-sm font-bold">
-                            {initialRequests[0]?.employeeName.charAt(0) || "M"}
+                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-sm font-bold" title={userName || userEmail || "Manager"}>
+                            {userInitials}
                         </div>
                     </div>
                 </div>
