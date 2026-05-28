@@ -1,0 +1,5 @@
+id,email,password,name,role,createdAt,updatedAt
+"admin","admin@epi.fr","$2a$12$6uRkBovv.qLhXqf6uE8o.O7qA8FqQvD7vU6t4Q5tWv6HqO5VvD7tG","Admin","ADMIN","""2026-02-20T15:52:54.363Z""","""2026-02-20T15:52:54.363Z"""
+"cmmapc76c00001fl9clkyg85v","employee@stef.com","$2b$10$//x13reahvt9FB1v8uanXOE28/V/j800zE4HS/kNhXYqeQvvJ.qRK","Employé Test","USER","""2026-03-03T14:27:22.836Z""","""2026-03-03T14:27:22.836Z"""
+"cmmc4ex5m0000jurll9fkt8qc","admin@stef.com","$2b$10$GSX/CsRXyk670Q7G5xGAFOijtu6/sVd4mtoKqBHD4E7hVFpHjgG2K","Admin User","ADMIN","""2026-03-04T14:17:10.232Z""","""2026-03-04T14:17:10.232Z"""
+"cmmapbq5j0000i3nzm8e01zey","admin@example.com","$2b$10$5R4GW0U3MU2SKzG/Z0V1X.JGmE8TL8T6v8XqwD6Iyc5SjNpSrht1C","Florian Philibert","ADMIN","""2026-03-03T14:27:00.771Z""","""2026-03-04T17:41:21.549Z"""

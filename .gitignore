@@ -38,3 +38,7 @@ next-env.d.ts
 
 # ignored folders
 src/
+
+# playwright
+/playwright-report/
+/test-results/

@@ -1,5 +1,3 @@
-import { AdminChatWidget } from "@/components/admin-chat";
-
 export default function AdminLayout({
     children,
 }: {
@@ -8,7 +6,6 @@ export default function AdminLayout({
     return (
         <div className="relative min-h-screen">
             {children}
-            <AdminChatWidget />
         </div>
     );
 }

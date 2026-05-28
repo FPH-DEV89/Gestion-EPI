@@ -10,6 +10,14 @@ export default defineConfig({
         setupFiles: './vitest.setup.ts',
         alias: {
             '@': resolve(__dirname, './')
-        }
+        },
+        exclude: [
+            '**/node_modules/**',
+            '**/dist/**',
+            '**/cypress/**',
+            '**/.{idea,git,cache,output,temp}/**',
+            '**/.next/**',
+            'tests/e2e/**'
+        ]
     },
 })

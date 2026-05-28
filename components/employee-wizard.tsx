@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { createRequests } from "@/app/actions"
 import { sortSizes } from "@/lib/utils"
-import { ChevronRight, ChevronLeft, CheckCircle2, User, HardHat, Ruler, Info, Plus } from "lucide-react"
+import { offlineDB } from "@/lib/offline-db"
+import { ChevronRight, ChevronLeft, CheckCircle2, User, HardHat, Ruler, Info, Plus, CloudOff, WifiOff, Wifi } from "lucide-react"
 
 interface StockItem {
     id: string
@@ -18,10 +19,14 @@ interface StockItem {
     stock: Record<string, number>
 }
 
-export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[] }) {
+export default function EmployeeWizard({ stockItems: initialStockItems }: { stockItems: StockItem[] }) {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [offlineSuccess, setOfflineSuccess] = useState(false)
+    const [isOffline, setIsOffline] = useState(false)
+    const [stockItems, setStockItems] = useState<StockItem[]>(initialStockItems)
+    const [syncNotification, setSyncNotification] = useState<string | null>(null)
     const [form, setForm] = useState({
         employeeName: "",
         firstName: "",
@@ -30,6 +35,82 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
         sizes: {} as Record<string, string>,
         reason: ""
     })
+
+    // Routine de synchronisation des requêtes hors-ligne en file d'attente
+    const syncOfflineRequests = async () => {
+        if (typeof window === "undefined" || !navigator.onLine) return;
+        const queue = await offlineDB.getQueue();
+        if (queue.length === 0) return;
+
+        let successCount = 0;
+        for (const req of queue) {
+            try {
+                const res = await createRequests({
+                    employeeName: req.employeeName,
+                    firstName: req.firstName,
+                    service: req.service,
+                    reason: req.reason,
+                    items: req.items
+                });
+                if (res.success) {
+                    await offlineDB.dequeueRequest(req.id);
+                    successCount += 1;
+                }
+            } catch (e) {
+                console.error("Échec de synchronisation d'une demande en cache:", e);
+            }
+        }
+
+        if (successCount > 0) {
+            setSyncNotification(`${successCount} demande(s) en attente synchronisée(s) avec succès !`);
+            setTimeout(() => setSyncNotification(null), 5000);
+        }
+    };
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        // Détection de l'état réseau initial
+        const updateNetworkStatus = () => {
+            const offline = !navigator.onLine;
+            setIsOffline(offline);
+            if (!offline) {
+                syncOfflineRequests();
+            }
+        };
+
+        updateNetworkStatus();
+        window.addEventListener("online", updateNetworkStatus);
+        window.addEventListener("offline", updateNetworkStatus);
+
+        // Sauvegarder les stocks reçus du serveur en cache local
+        if (initialStockItems && initialStockItems.length > 0) {
+            offlineDB.saveStock(initialStockItems);
+            setStockItems(initialStockItems);
+        } else {
+            // Si la base distante est injoignable, charger le stock depuis IndexedDB
+            const loadCachedStock = async () => {
+                const cached = await offlineDB.getStock();
+                if (cached && cached.length > 0) {
+                    setStockItems(cached);
+                }
+            };
+            loadCachedStock();
+        }
+
+        // Routine périodique de synchronisation légère en arrière-plan toutes les 15 secondes
+        const syncInterval = setInterval(() => {
+            if (navigator.onLine) {
+                syncOfflineRequests();
+            }
+        }, 15000);
+
+        return () => {
+            window.removeEventListener("online", updateNetworkStatus);
+            window.removeEventListener("offline", updateNetworkStatus);
+            clearInterval(syncInterval);
+        };
+    }, [initialStockItems]);
 
     const next = () => setStep(s => s + 1)
     const back = () => setStep(s => s - 1)
@@ -61,7 +142,7 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
 
     const handleSubmit = async () => {
         setLoading(true)
-        const res = await createRequests({
+        const reqData = {
             employeeName: form.employeeName,
             firstName: form.firstName,
             service: form.service,
@@ -70,9 +151,37 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                 category: cat,
                 size: form.sizes[cat]
             }))
-        })
-        if (res.success) setSuccess(true)
-        setLoading(false)
+        };
+
+        if (typeof window !== "undefined" && !navigator.onLine) {
+            // Sauvegarder dans IndexedDB en mode hors-ligne
+            try {
+                await offlineDB.enqueueRequest(reqData);
+                setOfflineSuccess(true);
+            } catch (err) {
+                console.error("Échec de sauvegarde hors-ligne:", err);
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        try {
+            const res = await createRequests(reqData);
+            if (res.success) {
+                setSuccess(true);
+            } else {
+                // En cas d'erreur de base de données (si gérée comme un échec)
+                await offlineDB.enqueueRequest(reqData);
+                setOfflineSuccess(true);
+            }
+        } catch (error) {
+            // Erreur réseau (serveur indisponible)
+            await offlineDB.enqueueRequest(reqData);
+            setOfflineSuccess(true);
+        } finally {
+            setLoading(false);
+        }
     }
 
     if (success) {
@@ -84,6 +193,23 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
                     Tes demandes d'équipement ont bien été enregistrées et seront traitées par ton manager.
                 </CardDescription>
                 <Button className="mt-6 w-full" onClick={() => window.location.reload()}>
+                     Nouvelle Demande
+                </Button>
+            </Card>
+        )
+    }
+
+    if (offlineSuccess) {
+        return (
+            <Card className="max-w-md mx-auto text-center p-8 mt-10 shadow-2xl rounded-[32px] border-none bg-white">
+                <div className="w-20 h-20 bg-blue-50 text-brand rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CloudOff className="w-10 h-10 text-[#135bec]" />
+                </div>
+                <CardTitle className="mb-2 text-2xl font-black text-slate-800">Demande Enregistrée Hors-ligne !</CardTitle>
+                <CardDescription className="text-slate-500 font-medium px-4">
+                    Pas de connexion internet. Ta demande a été sauvegardée en toute sécurité sur ton appareil et sera transmise automatiquement dès que le réseau sera rétabli.
+                </CardDescription>
+                <Button className="mt-8 w-full rounded-2xl h-14 bg-brand hover:bg-brand/90 font-bold" onClick={() => window.location.reload()}>
                     Nouvelle Demande
                 </Button>
             </Card>
@@ -91,7 +217,23 @@ export default function EmployeeWizard({ stockItems }: { stockItems: StockItem[]
     }
 
     return (
-        <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-10">
+        <div className="max-w-md mx-auto min-h-screen bg-slate-50 pb-10 relative">
+            {/* Toast de notification de synchronisation réussie */}
+            {syncNotification && (
+                <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-5 py-3 rounded-2xl shadow-[0_12px_40px_rgba(16,185,129,0.3)] z-[100] flex items-center gap-2 border border-emerald-400/20 font-bold text-xs animate-in fade-in slide-in-from-top-4 duration-300">
+                    <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
+                    <span>{syncNotification}</span>
+                </div>
+            )}
+
+            {/* Bannière de Mode Hors-ligne en haut de l'écran */}
+            {isOffline && (
+                <div className="mx-6 mt-4 bg-amber-500/15 border border-amber-500/20 text-amber-700 px-4 py-3.5 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold shadow-sm animate-pulse">
+                    <WifiOff className="w-4 h-4 shrink-0 text-amber-600" />
+                    <span>Mode Hors-ligne actif — Formulaire disponible</span>
+                </div>
+            )}
+
             {/* Stitch Wizard Header (Screenshot 4) */}
             <div className="bg-[#135bec] text-white pt-10 pb-20 px-8 rounded-b-[40px] shadow-lg mb-8 relative">
                 <div className="flex justify-between items-center mb-6">

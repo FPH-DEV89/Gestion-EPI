@@ -124,11 +124,15 @@ const GradientDefs = () => (
 
 const PIE_COLORS = ['#135bec', '#3b82f6', '#10b981', '#f59e0b', '#ec4899']
 
+import { useMemo } from 'react'
+
 export default function StatisticsDashboard({
     requests,
+    stock,
     showHeader = true
 }: {
     requests: Request[],
+    stock?: any[],
     showHeader?: boolean
 }) {
     const [activePieIndex, setActivePieIndex] = useState(0)
@@ -211,6 +215,87 @@ export default function StatisticsDashboard({
         return { date: `${date.getDate()}/${date.getMonth() + 1}`, requests: dayRequests }
     })
 
+    // ─── STEF AI Predictive Stock Calculations (Dynamique) ───────────────────
+    const aiPrediction = useMemo(() => {
+        if (!stock || stock.length === 0) {
+            return {
+                text: "Données de stock insuffisantes pour générer des prévisions précises d'autonomie.",
+                progress: 50,
+                confidence: 50,
+                isAlert: false
+            };
+        }
+
+        // 1. Calculer la vitesse d'attribution (quantité d'EPI validés par semaine par catégorie au cours des 30 derniers jours)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const recentRequests = requests.filter(r => r.status === "Ordered" && new Date(r.createdAt) >= thirtyDaysAgo);
+        const categoryWeeklyRates: Record<string, number> = {};
+
+        recentRequests.forEach(r => {
+            r.items.forEach(item => {
+                categoryWeeklyRates[item.category] = (categoryWeeklyRates[item.category] || 0) + 1;
+            });
+        });
+
+        // Diviser par 4.28 (environ 30 jours divisés par 7) pour avoir le taux hebdomadaire
+        Object.keys(categoryWeeklyRates).forEach(cat => {
+            categoryWeeklyRates[cat] = categoryWeeklyRates[cat] / 4.28;
+        });
+
+        // 2. Calculer le stock actuel total par catégorie
+        const categoryStocks: Record<string, number> = {};
+        stock.forEach(item => {
+            const totalQty = Object.values(item.stock as Record<string, number>).reduce((a, b) => a + b, 0);
+            categoryStocks[item.category] = totalQty;
+        });
+
+        // 3. Calculer les semaines d'autonomie
+        let criticalCategory = "";
+        let criticalLabel = "";
+        let minWeeks = Infinity;
+
+        stock.forEach(item => {
+            const currentStock = categoryStocks[item.category] || 0;
+            const weeklyRate = categoryWeeklyRates[item.category] || 0;
+
+            if (weeklyRate > 0) {
+                const weeks = currentStock / weeklyRate;
+                if (weeks < minWeeks) {
+                    minWeeks = weeks;
+                    criticalCategory = item.category;
+                    criticalLabel = item.label || item.category;
+                }
+            }
+        });
+
+        // 4. Formuler le message
+        if (criticalCategory && minWeeks < 4) {
+            const daysLeft = Math.round(minWeeks * 7);
+            return {
+                text: `Attention : Au rythme d'attribution actuel, le stock de ${criticalLabel} sera épuisé d'ici environ ${minWeeks.toFixed(1)} semaines (${daysLeft} jours).`,
+                progress: Math.max(10, Math.min(45, Math.round((minWeeks / 4) * 100))),
+                confidence: 92,
+                isAlert: true
+            };
+        } else if (criticalCategory && minWeeks !== Infinity) {
+            return {
+                text: `Autonomie saine : Le produit le plus demandé (${criticalLabel}) dispose de ${minWeeks.toFixed(1)} semaines d'autonomie. Aucune rupture immédiate en vue.`,
+                progress: Math.max(50, Math.min(100, Math.round((minWeeks / 12) * 100))),
+                confidence: 85,
+                isAlert: false
+            };
+        }
+
+        return {
+            text: "Le rythme d'attribution des EPI est stable. Vos réserves actuelles garantissent une autonomie globale moyenne confortable.",
+            progress: 80,
+            confidence: 75,
+            isAlert: false
+        };
+    }, [requests, stock]);
+
     return (
         <div className={`max-w-7xl mx-auto px-4 space-y-8 ${showHeader ? 'py-10' : 'pt-2 pb-10'}`}>
             
@@ -242,18 +327,23 @@ export default function StatisticsDashboard({
                                 <span className="text-sm font-bold text-white tracking-tight">STEF Insights</span>
                             </div>
                             <div className="animate-pulse flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-brand" />
-                                <span className="text-[10px] font-black text-brand uppercase tracking-wider">Prediction</span>
+                                <span className={`w-1.5 h-1.5 rounded-full ${aiPrediction.isAlert ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-brand'}`} />
+                                <span className={`text-[10px] font-black uppercase tracking-wider ${aiPrediction.isAlert ? 'text-rose-400' : 'text-brand'}`}>
+                                    {aiPrediction.isAlert ? 'Attention' : 'Prévision'}
+                                </span>
                             </div>
                         </div>
                         <div className="relative space-y-3">
                             <p className="text-sm text-slate-300 font-medium leading-snug">
-                                Basé sur les tendances actuelles, prévoyez un pic de demandes de <span className="text-white font-bold">+15%</span> pour le mois d'avril.
+                                {aiPrediction.text}
                             </p>
                             <div className="h-[2px] w-full bg-slate-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-brand w-[65%] rounded-full shadow-[0_0_12px_#135bec]" />
+                                <div 
+                                    className={`h-full rounded-full transition-all duration-500 ${aiPrediction.isAlert ? 'bg-rose-500 shadow-[0_0_12px_#f43f5e]' : 'bg-brand shadow-[0_0_12px_#135bec]'}`} 
+                                    style={{ width: `${aiPrediction.progress}%` }} 
+                                />
                             </div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Confiance IA: 88%</p>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Confiance IA : {aiPrediction.confidence}%</p>
                         </div>
                     </div>
                 </div>

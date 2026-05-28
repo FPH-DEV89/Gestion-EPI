@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "prisma db push && npx prisma db seed && next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "test": "npx vitest",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "prepare": "husky",
+    "test:e2e": "playwright test"
   },
   "prisma": {
     "seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed.ts"
@@ -48,6 +50,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@serwist/webpack-plugin": "^9.5.7",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
@@ -61,6 +64,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
