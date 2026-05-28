@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, Package, CheckCircle, Building2, Clock, TrendingUp, Zap, BarChart3, PieChart as PieIcon } from "lucide-react"
+import { Download, Package, CheckCircle, Building2, Clock, TrendingUp, Zap, BarChart3, PieChart as PieIcon, AlertTriangle, ShieldAlert } from "lucide-react"
 import {
     PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -47,11 +47,14 @@ interface RequestItem {
 interface Request {
     id: string
     employeeName: string
+    firstName?: string | null
     service: string
     items: RequestItem[]
     reason: string
     status: string
     createdAt: string
+    validatedBy?: string | null
+    validatedAt?: string | null
 }
 
 // ─── STEF Insights / Glass Tooltip ──────────────────────────────────────────
@@ -137,6 +140,7 @@ export default function StatisticsDashboard({
 }) {
     const [activePieIndex, setActivePieIndex] = useState(0)
     const [highlightedService, setHighlightedService] = useState<string | null>(null)
+    const [showBudget, setShowBudget] = useState(false)
 
     const downloadCSV = (content: string, filename: string) => {
         const blob = new Blob(["\uFEFF" + content], { type: 'text/csv;charset=utf-8;' })
@@ -189,24 +193,139 @@ export default function StatisticsDashboard({
     const animRate = useAnimatedCounter(validationRate)
 
     // ─── Data Aggregation ────────────────────────────────────────────────────
+    const categoryLabelMap = useMemo(() => {
+        const map: Record<string, string> = {}
+        stock?.forEach(item => {
+            map[item.category] = item.label || item.category
+        })
+        return map
+    }, [stock])
+
     const epiCounts = orderedRequests.reduce((acc: Record<string, number>, r) => {
-        r.items.forEach(item => { acc[item.category] = (acc[item.category] || 0) + 1 })
+        r.items.forEach(item => { 
+            const label = categoryLabelMap[item.category] || item.category
+            acc[label] = (acc[label] || 0) + 1 
+        })
         return acc
     }, {})
-    const totalRequestsCount = Object.values(epiCounts).reduce((a, b) => a + b, 0)
+    const totalRequestsCount = Object.values(epiCounts).reduce((a: number, b: number) => a + b, 0)
     const topEPIData = Object.entries(epiCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([name, value]) => ({ name, value, total: totalRequestsCount }))
 
     const serviceData = Object.entries(
-        orderedRequests.reduce((acc: Record<string, number>, r) => {
-            r.items.forEach(() => { acc[r.service] = (acc[r.service] || 0) + 1 })
+        orderedRequests.reduce((acc: Record<string, { count: number; cost: number }>, r) => {
+            if (!acc[r.service]) {
+                acc[r.service] = { count: 0, cost: 0 }
+            }
+            r.items.forEach(item => {
+                acc[r.service].count += 1
+                acc[r.service].cost += (item.snapshottedPrice || 0)
+            })
             return acc
         }, {})
-    ).map(([service, count]) => ({ service, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 6)
+    ).map(([service, { count, cost }]) => ({ 
+        service, 
+        count, 
+        cost,
+        value: showBudget ? cost : count 
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6)
+
+    // ─── Durability & Anomaly Analysis ───────────────────────────────────────
+    const durabilityAnomalies = useMemo(() => {
+        const anomalies: Array<{
+            employee: string
+            category: string
+            count: number
+            dates: string[]
+            averageInterval: number
+        }> = []
+
+        const allocations: Record<string, Record<string, Array<Date>>> = {}
+
+        orderedRequests.forEach(r => {
+            const employeeKey = r.firstName ? `${r.firstName} ${r.employeeName}` : r.employeeName
+            if (!allocations[employeeKey]) {
+                allocations[employeeKey] = {}
+            }
+            r.items.forEach(item => {
+                if (!allocations[employeeKey][item.category]) {
+                    allocations[employeeKey][item.category] = []
+                }
+                allocations[employeeKey][item.category].push(new Date(r.createdAt))
+            })
+        })
+
+        Object.entries(allocations).forEach(([employee, catMap]) => {
+            Object.entries(catMap).forEach(([category, dates]) => {
+                dates.sort((a, b) => a.getTime() - b.getTime())
+
+                if (dates.length < 3) return
+
+                let flagged = false
+                for (let i = 2; i < dates.length; i++) {
+                    const diffTime = dates[i].getTime() - dates[i-2].getTime()
+                    const diffDays = diffTime / (1000 * 60 * 60 * 24)
+                    if (diffDays <= 30) {
+                        flagged = true
+                        break
+                    }
+                }
+
+                if (flagged) {
+                    let totalDiff = 0
+                    for (let i = 1; i < dates.length; i++) {
+                        totalDiff += (dates[i].getTime() - dates[i-1].getTime())
+                    }
+                    const avgIntervalDays = Math.round(totalDiff / (dates.length - 1) / (1000 * 60 * 60 * 24))
+
+                    anomalies.push({
+                        employee,
+                        category: categoryLabelMap[category] || category,
+                        count: dates.length,
+                        dates: dates.map(d => d.toLocaleDateString("fr-FR", { day: '2-digit', month: '2-digit' })),
+                        averageInterval: avgIntervalDays
+                    })
+                }
+            })
+        })
+
+        return anomalies
+    }, [orderedRequests, categoryLabelMap])
+
+    // ─── Budget by Reason Analysis ───────────────────────────────────────────
+    const budgetByReason = useMemo(() => {
+        const breakdown: Record<string, number> = {
+            "Usure": 0,
+            "Perte": 0,
+            "Nouvel Arrivant": 0,
+            "Autre": 0
+        }
+
+        orderedRequests.forEach(r => {
+            const lower = (r.reason || "").toLowerCase()
+            let norm = "Autre"
+            if (lower.includes("usure")) norm = "Usure"
+            else if (lower.includes("perte")) norm = "Perte"
+            else if (lower.includes("arrivant") || lower.includes("nouveau") || lower.includes("recrutement")) norm = "Nouvel Arrivant"
+
+            const cost = r.items.reduce((sum, item) => sum + (item.snapshottedPrice || 0), 0)
+            breakdown[norm] = (breakdown[norm] || 0) + cost
+        })
+
+        const total = Object.values(breakdown).reduce((a, b) => a + b, 0)
+
+        return Object.entries(breakdown)
+            .map(([name, value]) => ({
+                name,
+                value,
+                percentage: total > 0 ? Math.round((value / total) * 100) : 0
+            }))
+            .sort((a, b) => b.value - a.value)
+    }, [orderedRequests])
 
     const timelineData = Array.from({ length: 30 }, (_, i) => {
         const date = new Date()
@@ -452,12 +571,28 @@ export default function StatisticsDashboard({
 
                 {/* Bar Chart: Services */}
                 <Card className="rounded-[40px] border-none shadow-[0_2px_24px_rgba(0,0,0,0.04)] bg-white overflow-hidden">
-                    <CardHeader className="p-8 pb-0">
+                    <CardHeader className="p-8 pb-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="space-y-1">
                             <CardTitle className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
                                 <Building2 className="w-5 h-5 text-brand" /> Impact par Service
                             </CardTitle>
-                            <CardDescription className="text-slate-400 font-medium">Consommation d'EPI par département</CardDescription>
+                            <CardDescription className="text-slate-400 font-medium">
+                                {showBudget ? "Budget dépensé en Euros (€)" : "Quantité d'EPI distribués"} par service
+                            </CardDescription>
+                        </div>
+                        <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-full border border-slate-200/50 dark:border-white/5 shadow-inner">
+                            <button
+                                onClick={() => setShowBudget(false)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-black tracking-tight transition-all duration-300 ${!showBudget ? 'bg-white dark:bg-slate-900 text-brand shadow-sm scale-105' : 'text-slate-500 hover:text-slate-905 dark:hover:text-slate-200'}`}
+                            >
+                                Unités
+                            </button>
+                            <button
+                                onClick={() => setShowBudget(true)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-black tracking-tight transition-all duration-300 ${showBudget ? 'bg-brand text-white shadow-sm scale-105' : 'text-slate-500 hover:text-slate-905 dark:hover:text-slate-200'}`}
+                            >
+                                Budget (€)
+                            </button>
                         </div>
                     </CardHeader>
                     <CardContent className="p-8 pt-12">
@@ -474,14 +609,14 @@ export default function StatisticsDashboard({
                                     axisLine={false} 
                                     tickLine={false}
                                 />
-                                <TooltipAny cursor={{ fill: '#f8fafc', radius: 12 }} content={<GlassTooltip />} />
+                                <TooltipAny cursor={{ fill: '#f8fafc', radius: 12 }} content={<GlassTooltip isCost={showBudget} />} />
                                 <BarAny
-                                    dataKey="count"
+                                    dataKey="value"
                                     fill="url(#brandGrad)"
                                     radius={[0, 16, 16, 0]}
                                     barSize={24}
                                 >
-                                    {serviceData.map((entry, index) => (
+                                    {serviceData.map((entry: any, index: any) => (
                                         <Cell key={`cell-${index}`} fill={highlightedService === null || highlightedService === entry.service ? 'url(#brandGrad)' : '#cbd5e1'}
                                             onMouseEnter={() => setHighlightedService(entry.service)}
                                             onMouseLeave={() => setHighlightedService(null)} 
@@ -490,6 +625,133 @@ export default function StatisticsDashboard({
                                 </BarAny>
                             </BarChart>
                         </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* ─── Financial Audit & Durability Section ─────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Budget Distribution by Reason */}
+                <Card className="rounded-[40px] border-none shadow-[0_2px_24px_rgba(0,0,0,0.04)] bg-white overflow-hidden flex flex-col justify-between">
+                    <CardHeader className="p-8 pb-0">
+                        <div className="space-y-1">
+                            <CardTitle className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+                                <BarChart3 className="w-5 h-5 text-brand" /> Budget par Motif
+                            </CardTitle>
+                            <CardDescription className="text-slate-400 font-medium">Répartition des dépenses selon l'origine du besoin</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-8 flex-1 flex flex-col justify-center">
+                        {/* Stacked Progress Bar */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span>Distribution Visuelle</span>
+                                <span>Total: {Math.round(totalBudget).toLocaleString('fr-FR')} €</span>
+                            </div>
+                            <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full flex overflow-hidden shadow-inner">
+                                {budgetByReason.map((item, i) => {
+                                    const colors = ["bg-[#135bec]", "bg-[#10b981]", "bg-[#f43f5e]", "bg-[#64748b]"]
+                                    return item.percentage > 0 && (
+                                        <div 
+                                            key={i} 
+                                            className={`${colors[i % colors.length]} h-full transition-all duration-500`}
+                                            style={{ width: `${item.percentage}%` }}
+                                            title={`${item.name} : ${item.percentage}%`}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        </div>
+
+                        {/* List of Reasons details */}
+                        <div className="grid gap-3">
+                            {budgetByReason.map((item, i) => {
+                                const colors = ["bg-[#135bec]", "bg-[#10b981]", "bg-[#f43f5e]", "bg-[#64748b]"]
+                                const textColors = ["text-[#135bec]", "text-[#10b981]", "text-[#f43f5e]", "text-[#64748b]"]
+                                const bgColors = ["bg-[#135bec]/10", "bg-[#10b981]/10", "bg-[#f43f5e]/10", "bg-[#64748b]/10"]
+                                return (
+                                    <div key={i} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-100 transition-all duration-300 hover:bg-slate-100/80">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-3.5 h-3.5 rounded-full shrink-0 ${colors[i % colors.length]}`} />
+                                            <div>
+                                                <p className="text-[11px] font-extrabold text-slate-900 uppercase tracking-tight leading-none">{item.name}</p>
+                                                <p className="text-[10px] font-medium text-slate-400 mt-1">Impact sur le stock global</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-black text-slate-900 tracking-tight">{Math.round(item.value).toLocaleString('fr-FR')} €</p>
+                                            <span className={`inline-block text-[9px] font-black px-2 py-0.5 rounded-full mt-1 ${bgColors[i % bgColors.length]} ${textColors[i % textColors.length]}`}>
+                                                {item.percentage}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Durability Anomalies Widget */}
+                <Card className="rounded-[40px] border-none shadow-[0_2px_24px_rgba(0,0,0,0.04)] bg-white overflow-hidden flex flex-col justify-between">
+                    <CardHeader className="p-8 pb-0">
+                        <div className="space-y-1">
+                            <CardTitle className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+                                <ShieldAlert className="w-5 h-5 text-rose-500" /> Alertes Durabilité & Anomalies
+                            </CardTitle>
+                            <CardDescription className="text-slate-400 font-medium">Usures prématurées : EPI demandés &gt; 2 fois en 30 jours</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-4 flex-1 flex flex-col justify-center overflow-y-auto max-h-[380px]">
+                        {durabilityAnomalies.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
+                                <div className="p-4 rounded-full bg-emerald-50 text-emerald-505 shadow-sm border border-emerald-100">
+                                    <CheckCircle className="w-8 h-8 text-emerald-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-black text-slate-950">Aucune usure prématurée</p>
+                                    <p className="text-xs text-slate-400 font-medium max-w-xs mt-1">
+                                        Tous les renouvellements d'équipements s'effectuent selon des cycles normaux.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {durabilityAnomalies.slice(0, 4).map((anomaly, i) => (
+                                    <div key={i} className="relative overflow-hidden backdrop-blur-3xl bg-rose-50/50 dark:bg-rose-955/20 border border-rose-100/80 dark:border-rose-900/30 rounded-3xl p-4 transition-all duration-300 hover:scale-[1.01]">
+                                        {/* Pulse Alert Tag */}
+                                        <div className="absolute top-4 right-4 flex items-center gap-1">
+                                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                                            <span className="w-2 h-2 rounded-full bg-rose-500 absolute" />
+                                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest ml-2 bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 rounded-full">
+                                                Alerte {anomaly.count}x
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div>
+                                                <p className="text-xs font-black text-slate-900 tracking-tight">{anomaly.employee}</p>
+                                                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mt-0.5">{anomaly.category}</p>
+                                            </div>
+
+                                            <div className="flex items-center justify-between border-t border-rose-200/30 pt-2.5">
+                                                <div>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Cycle moyen</span>
+                                                    <span className="text-xs font-black text-slate-900 flex items-center gap-1 mt-0.5">
+                                                        <Clock className="w-3.5 h-3.5 text-slate-400" /> {anomaly.averageInterval} jours
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Dotations récentes</span>
+                                                    <span className="text-[10px] font-black text-slate-700 bg-white/80 px-2 py-0.5 rounded-md mt-0.5 inline-block">
+                                                        {anomaly.dates.join(" ➔ ")}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -508,19 +770,24 @@ export default function StatisticsDashboard({
                         className="rounded-full w-12 h-12 bg-slate-50 text-slate-900 hover:bg-brand hover:text-white transition-all duration-300"
                         onClick={() => {
                             const consumed = requests.filter(r => r.status === "Ordered")
-                            const headers = ["Date", "Collaborateur", "Service", "Equipement", "Taille", "Prix unitaire"]
+                            const headers = ["Date", "Collaborateur", "Service", "Equipement", "Taille", "Prix unitaire", "Motif", "Validateur"]
                             const rows: string[][] = []
                             consumed.forEach(r => {
                                 r.items.forEach(item => {
                                     rows.push([
                                         new Date(r.createdAt).toLocaleDateString("fr-FR"),
-                                        r.employeeName, r.service, item.category, item.size,
-                                        `${item.snapshottedPrice}€`
+                                        r.employeeName, 
+                                        r.service, 
+                                        categoryLabelMap[item.category] || item.category, 
+                                        item.size,
+                                        `${item.snapshottedPrice || 0} €`,
+                                        r.reason || "Non spécifié",
+                                        r.validatedBy || "Automatique"
                                     ])
                                 })
                             })
                             downloadCSV([headers.join(";"), ...rows.map(row => row.join(";"))].join("\n"),
-                                `stef_analytic_extract_${new Date().toISOString().split('T')[0]}.csv`)
+                                `stef_financial_audit_${new Date().toISOString().split('T')[0]}.csv`)
                         }}
                     >
                         <Download className="w-5 h-5" />
