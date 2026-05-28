@@ -1,0 +1,23 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🐕 [Husky] Lancement des vérifications de pré-commit..."
+
+# 1. Vérification des types TypeScript
+echo "🔍 Vérification des types TypeScript (tsc)..."
+npx tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "❌ Échec de la vérification des types TypeScript. Commit bloqué."
+  exit 1
+fi
+
+# 2. Exécution des tests unitaires
+echo "🧪 Lancement des tests unitaires (Vitest)..."
+npx vitest run
+if [ $? -ne 0 ]; then
+  echo "❌ Certains tests unitaires ont échoué. Commit bloqué."
+  exit 1
+fi
+
+echo "✅ Toutes les vérifications locales ont été passées avec succès ! Commit autorisé."
+exit 0

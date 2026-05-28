@@ -23,7 +23,6 @@ import HistoryView from "./history-view"
 import AuditLogView from "./audit-log-view"
 import CollaboratorsView from "./collaborators-view"
 import { useToast } from "@/components/ui/use-toast"
-import { AdminChatWidget } from "./admin-chat"
 import SignaturePad from "./signature-pad"
 import { addOfflineAction, getOfflineActions, removeOfflineAction, getOfflineQueueCount, OfflineAction } from "@/app/lib/offline-queue"
 
@@ -177,6 +176,13 @@ export default function ManagerDashboard({
     const [editingSku, setEditingSku] = useState<{ id: string, size: string, field: 'ref' | 'location' } | null>(null)
     const [editMetadataValue, setEditMetadataValue] = useState("")
     const { toast } = useToast()
+
+    const [showNotifications, setShowNotifications] = useState(false)
+
+    // Calcul mémoïsé des articles sous le seuil critique (Alerte de Stock)
+    const lowStockItems = useMemo(() => {
+        return flattenedStock.filter(item => item.quantity < item.minThreshold)
+    }, [flattenedStock])
 
     // Signature dialog state
     const [signatureDialog, setSignatureDialog] = useState<{ open: boolean, requestId: string, employeeName: string } | null>(null)
@@ -519,9 +525,66 @@ export default function ManagerDashboard({
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                        {/* Centre de notifications pour le Stock Critique */}
+                        <div className="relative">
+                            <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="text-white hover:bg-white/20 rounded-full w-10 h-10 relative transition-all"
+                                onClick={() => setShowNotifications(!showNotifications)}
+                            >
+                                <Bell className="w-5 h-5" />
+                                {lowStockItems.length > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-[9px] font-black items-center justify-center text-white">
+                                            {lowStockItems.length}
+                                        </span>
+                                    </span>
+                                )}
+                            </Button>
+                            
+                            {/* Menu Déroulant des Alertes (Glassmorphic) */}
+                            {showNotifications && (
+                                <div className="absolute right-0 mt-3 w-80 bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 p-4 z-[100] animate-in slide-in-from-top-2 duration-300 origin-top-right text-slate-800">
+                                    <div className="flex justify-between items-center border-b border-slate-100 pb-2 mb-2">
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Alertes de Stock</span>
+                                        <Badge variant="destructive" className="bg-red-50 text-red-500 rounded-lg px-2 text-[10px] font-black uppercase">
+                                            {lowStockItems.length} articles
+                                        </Badge>
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                                        {lowStockItems.length === 0 ? (
+                                            <p className="text-xs font-semibold text-slate-400 text-center py-4">Aucune alerte de stock en cours ! 🎉</p>
+                                        ) : (
+                                            lowStockItems.map((item, idx) => (
+                                                <div 
+                                                    key={`${item.id}-${item.size}-${idx}`} 
+                                                    className="flex items-center justify-between p-2 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 cursor-pointer transition-colors"
+                                                    onClick={() => {
+                                                        setActiveTab("inventory");
+                                                        setSearchTerm(item.label);
+                                                        setShowNotifications(false);
+                                                    }}
+                                                >
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-bold text-slate-800 truncate">{item.label}</p>
+                                                        <p className="text-[10px] font-medium text-slate-400">Taille : {item.size} • Seuil : {item.minThreshold}</p>
+                                                    </div>
+                                                    <Badge variant="destructive" className="bg-red-500 text-white font-black text-[10px] px-2 py-0.5 rounded-full shrink-0">
+                                                        {item.quantity} restants
+                                                    </Badge>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <Button variant="ghost" className="text-white hover:bg-white/10 p-2 rounded-full">
-                            <MoreHorizontal className="w-6 h-6 rotate-90" /> {/* Mimics a search or filter toggle icon if needed, or I can import Search */}
+                            <MoreHorizontal className="w-6 h-6 rotate-90" />
                         </Button>
                         <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-sm font-bold">
                             {initialRequests[0]?.employeeName.charAt(0) || "M"}
@@ -902,7 +965,7 @@ export default function ManagerDashboard({
 
 
                 <TabsContent value="statistics">
-                    <StatisticsDashboard requests={requests} showHeader={false} />
+                    <StatisticsDashboard requests={requests} stock={stock} showHeader={false} />
                 </TabsContent>
 
                 {userRole === "ADMIN" && (
@@ -994,9 +1057,6 @@ export default function ManagerDashboard({
                 />
             )}
             
-            {/* AI Assistant Chatbot */}
-            <AdminChatWidget />
-
             {/* Signature Dialog */}
             <AlertDialog open={!!signatureDialog?.open} onOpenChange={(open) => { if (!open) setSignatureDialog(null) }}>
                 <AlertDialogContent className="max-w-md mx-auto rounded-[36px] border-none shadow-2xl p-8">
