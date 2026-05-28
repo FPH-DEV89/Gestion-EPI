@@ -72,6 +72,8 @@ export default async function AdminPage() {
                     initialStock={serializedStock}
                     initialAuditLogs={serializedAuditLogs}
                     userRole={userRole}
+                    userEmail={session?.user?.email || null}
+                    userName={session?.user?.name || null}
                 />
             </main>
         )
