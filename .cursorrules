@@ -1,7 +1,7 @@
 # Instructions de Développement pour les Assistants IA (Antigravity, Cursor, Cline...)
 
 ## 🎯 Règle d'or de Clôture (Mise à jour du Contexte)
-- **OBLIGATION SYSTÉMATIQUE :** À la fin de chaque tâche, fonctionnalité ou modification majeure réussie, vous DEVEZ mettre à jour le fichier `PROJECT_SUMMARY.md` à la racine pour y inscrire de manière concise les changements d'architecture, les nouveaux composants et l'état de la QA.
+- **OBLIGATION SYSTÉMATIQUE :** À la fin de chaque tâche, fonctionnalité ou modification majeure réussie, vous DEVEZ mettre à jour le fichier `epi-manager-PROJECT_SUMMARY.md` à la racine pour y inscrire de manière concise les changements d'architecture, les nouveaux composants et l'état de la QA.
 
 ## 🇫🇷 Langue de Communication
 - Communiquez exclusivement en **français** avec l'utilisateur et rédigez les livrables/commentaires dans cette même langue.

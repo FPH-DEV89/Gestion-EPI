@@ -9,7 +9,7 @@ Ce document sert de **base de connaissances ultra-légère** pour les assistants
 *   **Framework :** Next.js 16 (App Router, React 19)
 *   **Langage :** TypeScript (mode strict activé)
 *   **Base de Données :** PostgreSQL (hébergé sur Vercel DB) avec l'ORM **Prisma**
-*   **Authentification :** NextAuth.js v5 (auth.ts)
+*   **Authentification :** NextAuth.js v5 (auth.ts) + **Keycloak (OIDC)** pour la gestion IAM
 *   **Design / Styles :** Tailwind CSS (V4), Lucide Icons, Recharts (visualisations graphiques)
 *   **Tests / QA :** Playwright (E2E) & Vitest (Tests unitaires)
 
@@ -33,6 +33,17 @@ Ce document sert de **base de connaissances ultra-légère** pour les assistants
 
 ### 👤 D. Personnalisation de l'Avatar Admin
 *   **Initiales Dynamiques ([manager-dashboard.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/manager-dashboard.tsx)) :** L'avatar en haut à droite affiche à présent de manière dynamique les initiales du gestionnaire connecté (ex: **FP** pour `admin@example.com`) grâce à un parseur intelligent du nom ou de l'email NextAuth, avec tooltip de survol.
+
+### ✍️ E. Signature Électronique Tactile de Remise
+*   **Composant signature ([components/signature-pad.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/signature-pad.tsx)) :** Pad de dessin HTML5 Canvas avec support tactile fluide pour signer la remise d'EPI sur mobile, tablette ou desktop.
+*   **Intégration Dashboard ([components/manager-dashboard.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/manager-dashboard.tsx)) :** Fenêtre modale de signature lors de la validation d'une demande, avec persistance dans IndexedDB en mode hors-ligne puis synchronisation automatique de l'image base64 de la signature via `validateRequest`.
+
+### 👥 F. Gestion des Collaborateurs & Profils
+*   **Annuaire Collaborateurs ([components/collaborators-view.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/collaborators-view.tsx)) :** Interface d'administration listant tous les employés STEF avec leurs profils de tailles/pointures et l'historique complet de leurs dotations.
+*   **Dashboard Collaborateur ([components/employee-dashboard.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/employee-dashboard.tsx)) :** Vue simplifiée et dédiée permettant à un utilisateur d'interroger en direct son statut d'attribution et ses demandes en attente.
+
+### 📋 G. Traçabilité & Journaux d'Audit (Compliance)
+*   **Logs de Sécurité ([components/audit-log-view.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/audit-log-view.tsx)) :** Tableau d'audit historique listant de manière immuable chaque action sensible (validation de demande, modification manuelle des stocks, synchronisation hors-ligne).
 
 ---
 

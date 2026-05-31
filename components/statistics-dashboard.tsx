@@ -580,16 +580,16 @@ export default function StatisticsDashboard({
                                 {showBudget ? "Budget dépensé en Euros (€)" : "Quantité d'EPI distribués"} par service
                             </CardDescription>
                         </div>
-                        <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-full border border-slate-200/50 dark:border-white/5 shadow-inner">
+                        <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200/50 shadow-inner">
                             <button
                                 onClick={() => setShowBudget(false)}
-                                className={`px-4 py-1.5 rounded-full text-xs font-black tracking-tight transition-all duration-300 ${!showBudget ? 'bg-white dark:bg-slate-900 text-brand shadow-sm scale-105' : 'text-slate-500 hover:text-slate-905 dark:hover:text-slate-200'}`}
+                                className={`px-4 py-1.5 rounded-full text-xs font-black tracking-tight transition-all duration-300 ${!showBudget ? 'bg-white text-brand shadow-sm scale-105' : 'text-slate-500 hover:text-slate-905'}`}
                             >
                                 Unités
                             </button>
                             <button
                                 onClick={() => setShowBudget(true)}
-                                className={`px-4 py-1.5 rounded-full text-xs font-black tracking-tight transition-all duration-300 ${showBudget ? 'bg-brand text-white shadow-sm scale-105' : 'text-slate-500 hover:text-slate-905 dark:hover:text-slate-200'}`}
+                                className={`px-4 py-1.5 rounded-full text-xs font-black tracking-tight transition-all duration-300 ${showBudget ? 'bg-brand text-white shadow-sm scale-105' : 'text-slate-500 hover:text-slate-905'}`}
                             >
                                 Budget (€)
                             </button>
@@ -648,7 +648,7 @@ export default function StatisticsDashboard({
                                 <span>Distribution Visuelle</span>
                                 <span>Total: {Math.round(totalBudget).toLocaleString('fr-FR')} €</span>
                             </div>
-                            <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-full flex overflow-hidden shadow-inner">
+                            <div className="h-4 w-full bg-slate-100 rounded-full flex overflow-hidden shadow-inner">
                                 {budgetByReason.map((item, i) => {
                                     const colors = ["bg-[#135bec]", "bg-[#10b981]", "bg-[#f43f5e]", "bg-[#64748b]"]
                                     return item.percentage > 0 && (
@@ -717,12 +717,12 @@ export default function StatisticsDashboard({
                         ) : (
                             <div className="space-y-3">
                                 {durabilityAnomalies.slice(0, 4).map((anomaly, i) => (
-                                    <div key={i} className="relative overflow-hidden backdrop-blur-3xl bg-rose-50/50 dark:bg-rose-955/20 border border-rose-100/80 dark:border-rose-900/30 rounded-3xl p-4 transition-all duration-300 hover:scale-[1.01]">
+                                    <div key={i} className="relative overflow-hidden backdrop-blur-3xl bg-rose-50/50 border border-rose-100/80 rounded-3xl p-4 transition-all duration-300 hover:scale-[1.01]">
                                         {/* Pulse Alert Tag */}
                                         <div className="absolute top-4 right-4 flex items-center gap-1">
                                             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                                             <span className="w-2 h-2 rounded-full bg-rose-500 absolute" />
-                                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest ml-2 bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 rounded-full">
+                                            <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest ml-2 bg-rose-100 px-2 py-0.5 rounded-full">
                                                 Alerte {anomaly.count}x
                                             </span>
                                         </div>
