@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "prisma db push && npx prisma db seed && next build --webpack",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
-    "test": "npx vitest",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "db:push": "prisma db push",
+    "db:seed": "npx prisma db seed",
+    "db:init": "npm run db:push && npm run db:seed",
     "postinstall": "prisma generate",
     "prepare": "husky",
     "test:e2e": "playwright test"
