@@ -24,9 +24,14 @@ const serwist = new Serwist({
   },
 });
 
-// CRITICAL: Prevent BackgroundSync from crashing Next.js Server Actions
+// CRITICAL: Bypass Serwist entirely for all non-GET requests.
+// A bare `return` (no respondWith) still lets Serwist's listener run and
+// return a `no-response` network error for Server Actions and form POSTs.
+// By calling event.respondWith(fetch(...)) we claim the event first so
+// Serwist cannot intercept POST / PUT / DELETE / PATCH requests.
 self.addEventListener("fetch", (event: any) => {
-  if (event.request.headers.get("Next-Action")) {
+  if (event.request.method !== "GET") {
+    event.respondWith(fetch(event.request));
     return;
   }
 });
