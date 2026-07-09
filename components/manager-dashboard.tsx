@@ -202,6 +202,7 @@ export default function ManagerDashboard({
     const { toast } = useToast()
 
     const [showNotifications, setShowNotifications] = useState(false)
+    const [showProfileCard, setShowProfileCard] = useState(false)
 
     // Calcul mémoïsé des articles sous le seuil critique (Alerte de Stock)
     const lowStockItems = useMemo(() => {
@@ -532,15 +533,16 @@ export default function ManagerDashboard({
             {/* World-Class STEF Header (Action Feed Style) */}
             <div className="bg-[#135bec] text-white pt-8 pb-32 px-6 rounded-b-[40px] shadow-lg mb-8 relative">
                 <div className="flex justify-between items-center mb-6">
-                    <Link href="/">
-                        <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="text-white hover:bg-white/20 rounded-full w-10 h-10"
-                        >
+                    <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="text-white hover:bg-white/20 rounded-full w-10 h-10 cursor-pointer"
+                        asChild
+                    >
+                        <Link href="/">
                             <ChevronLeft className="w-6 h-6" />
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                     
                     <div className="flex flex-col items-center">
                         <h1 className="text-4xl font-black tracking-tighter text-white">STEF</h1>
@@ -556,7 +558,11 @@ export default function ManagerDashboard({
                                 variant="ghost" 
                                 size="icon"
                                 className="text-white hover:bg-white/20 rounded-full w-10 h-10 relative transition-all"
-                                onClick={() => setShowNotifications(!showNotifications)}
+                                onClick={() => {
+                                    setShowNotifications(!showNotifications)
+                                    setShowMoreMenu(false)
+                                    setShowProfileCard(false)
+                                }}
                             >
                                 <Bell className="w-5 h-5" />
                                 {lowStockItems.length > 0 && (
@@ -607,11 +613,129 @@ export default function ManagerDashboard({
                             )}
                         </div>
 
-                        <Button variant="ghost" className="text-white hover:bg-white/10 p-2 rounded-full">
-                            <MoreHorizontal className="w-6 h-6 rotate-90" />
-                        </Button>
-                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-sm font-bold" title={userName || userEmail || "Manager"}>
-                            {userInitials}
+                        {/* Menu d'actions rapides (trois points) */}
+                        <div className="relative">
+                            <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer"
+                                onClick={() => {
+                                    setShowMoreMenu(!showMoreMenu)
+                                    setShowNotifications(false)
+                                    setShowProfileCard(false)
+                                }}
+                            >
+                                <MoreHorizontal className="w-6 h-6 rotate-90" />
+                            </Button>
+                            
+                            {showMoreMenu && (
+                                <div className="absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 p-3 z-[100] animate-in slide-in-from-top-2 duration-300 origin-top-right text-slate-800">
+                                    <div className="border-b border-slate-100 pb-2 mb-2 px-2">
+                                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Options & Actions</span>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Link 
+                                            href="/" 
+                                            className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-100 transition-colors text-left text-sm font-bold text-slate-700"
+                                            onClick={() => setShowMoreMenu(false)}
+                                        >
+                                            <Package className="w-4 h-4 text-[#135bec]" />
+                                            <span>Saisie Collaborateur</span>
+                                        </Link>
+                                        <button 
+                                            onClick={() => {
+                                                exportRequestsToCSV();
+                                                setShowMoreMenu(false);
+                                            }}
+                                            className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-100 transition-colors text-left text-sm font-bold text-slate-700 cursor-pointer"
+                                        >
+                                            <Download className="w-4 h-4 text-[#135bec]" />
+                                            <span>Export Demandes (CSV)</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                exportInventoryToCSV();
+                                                setShowMoreMenu(false);
+                                            }}
+                                            className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-100 transition-colors text-left text-sm font-bold text-slate-700 cursor-pointer"
+                                        >
+                                            <Download className="w-4 h-4 text-[#135bec]" />
+                                            <span>Export Inventaire (CSV)</span>
+                                        </button>
+                                        
+                                        {offlineQueueCount > 0 && (
+                                            <button 
+                                                onClick={() => {
+                                                    if (isOnline) {
+                                                        syncOfflineActions();
+                                                    }
+                                                    setShowMoreMenu(false);
+                                                }}
+                                                className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-100 transition-colors text-left text-sm font-bold text-slate-700 cursor-pointer"
+                                            >
+                                                <Save className="w-4 h-4 text-emerald-500" />
+                                                <span>Synchroniser ({offlineQueueCount})</span>
+                                            </button>
+                                        )}
+
+                                        <div className="border-t border-slate-100 my-1 pt-1" />
+                                        
+                                        <form action={handleSignOut} className="w-full">
+                                            <button 
+                                                type="submit"
+                                                className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-red-50 text-red-600 transition-colors text-left text-sm font-bold w-full cursor-pointer"
+                                            >
+                                                <LogOut className="w-4 h-4 text-red-500" />
+                                                <span>Déconnexion</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Profil utilisateur (initiales) */}
+                        <div className="relative">
+                            <button 
+                                onClick={() => {
+                                    setShowProfileCard(!showProfileCard)
+                                    setShowNotifications(false)
+                                    setShowMoreMenu(false)
+                                }}
+                                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 transition-all backdrop-blur-md flex items-center justify-center border border-white/30 text-sm font-bold cursor-pointer" 
+                                title={userName || userEmail || "Manager"}
+                            >
+                                {userInitials}
+                            </button>
+
+                            {showProfileCard && (
+                                <div className="absolute right-0 mt-3 w-80 bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 p-5 z-[100] animate-in slide-in-from-top-2 duration-300 origin-top-right text-slate-800">
+                                    <div className="flex flex-col items-center text-center space-y-3 pb-4 border-b border-slate-100">
+                                        <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#135bec] to-blue-400 flex items-center justify-center text-white font-black text-2xl shadow-lg">
+                                            {userInitials}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-lg font-black text-slate-800 leading-tight">{userName || "Manager"}</h4>
+                                            <p className="text-xs font-bold text-slate-400 mt-1">{userEmail || "Pas d'adresse e-mail"}</p>
+                                        </div>
+                                        <Badge className="bg-blue-50 text-[#135bec] hover:bg-blue-100 border-none font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                                            {userRole === "ADMIN" ? "Administrateur" : userRole}
+                                        </Badge>
+                                    </div>
+                                    <div className="pt-3">
+                                        <form action={handleSignOut} className="w-full">
+                                            <Button 
+                                                type="submit"
+                                                variant="outline"
+                                                className="w-full border-red-100 hover:border-red-200 text-red-600 hover:bg-red-50 rounded-xl h-10 font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                            >
+                                                <LogOut className="w-4 h-4" />
+                                                Se déconnecter
+                                            </Button>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
