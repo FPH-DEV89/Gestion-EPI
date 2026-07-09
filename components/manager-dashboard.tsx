@@ -92,6 +92,376 @@ interface AuditLog {
     createdAt: string
 }
 
+interface StockItemCardProps {
+    item: StockItem
+    showStockImages: boolean
+    handleAdjustStock: (itemId: string, size: string, delta: number) => Promise<void>
+    handleSkuMetadataUpdate: (itemId: string, size: string, field: 'ref' | 'location', value: string) => Promise<void>
+}
+
+function StockItemCard({
+    item,
+    showStockImages,
+    handleAdjustStock,
+    handleSkuMetadataUpdate
+}: StockItemCardProps) {
+    const [selectedSize, setSelectedSize] = useState<string | null>(null)
+    const [editingSkuField, setEditingSkuField] = useState<'ref' | 'location' | null>(null)
+    const [editMetadataValue, setEditMetadataValue] = useState("")
+
+    const totalQuantity = Object.values(item.stock).reduce((a, b) => a + b, 0)
+    const hasLowStock = Object.entries(item.stock).some(([size, qty]) => qty < item.minThreshold)
+    const sortedSizesList = sortSizes(Object.keys(item.stock))
+
+    // image
+    let image = 'https://images.unsplash.com/photo-1532634922-8fe0b757fb13?auto=format&fit=crop&q=80&w=200'
+    const cat = item.category.toLowerCase()
+    if (cat.includes('chaussure') || cat.includes('basket')) image = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=200'
+    else if (cat.includes('gant')) image = 'https://images.unsplash.com/photo-1590856029826-c7a73142bbf1?auto=format&fit=crop&q=80&w=200'
+    else if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka')) image = 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=200'
+    else if (cat.includes('pantalon')) image = 'https://images.unsplash.com/photo-1624371414361-e6e8ea7c7526?auto=format&fit=crop&q=80&w=200'
+    else if (cat.includes('casque') || cat.includes('protection')) image = 'https://images.unsplash.com/photo-1595165997096-3b6045d44810?auto=format&fit=crop&q=80&w=200'
+    else if (cat.includes('gilet')) image = 'https://images.unsplash.com/photo-1614786269829-d34618e8c84b?auto=format&fit=crop&q=80&w=200'
+
+    // If size is selected, we show the sub-tile
+    if (selectedSize) {
+        const qty = item.stock[selectedSize] || 0
+        const isLow = qty < item.minThreshold
+        const progress = Math.min(100, Math.round((qty / (item.minThreshold * 2)) * 100))
+        const metadata = (item.skuMetadata as Record<string, any>)?.[selectedSize] || {}
+        const ref = metadata.ref || `${item.category.substring(0, 2).toUpperCase()}-${selectedSize}-TEMP`
+        const location = metadata.location || `ZONE-A-01`
+
+        return (
+            <Card className="overflow-hidden border-0 shadow-2xl bg-white rounded-[40px] transition-all hover:shadow-blue-900/5 group">
+                <div className="p-6">
+                    {/* Top Section: Back Button, Title & Status */}
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="space-y-1">
+                            <button 
+                                onClick={() => {
+                                    setSelectedSize(null)
+                                    setEditingSkuField(null)
+                                }}
+                                className="flex items-center gap-1 text-xs font-black text-[#135bec] uppercase tracking-wider mb-2 hover:opacity-80 active:scale-95 transition-all"
+                            >
+                                <ChevronLeft className="w-4 h-4" /> Retour
+                            </button>
+                            <h3 className="text-xl font-black text-slate-800 leading-tight tracking-tight">
+                                {item.label}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-slate-400 capitalize">Taille: {selectedSize}</span>
+                            </div>
+                        </div>
+                        {isLow && (
+                            <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                Critique
+                            </Badge>
+                        )}
+                    </div>
+
+                    {/* Middle Section: Image & Circular progress */}
+                    <div className="flex items-center justify-between gap-6 mb-8 mt-2">
+                        <div className="relative w-32 h-32 rounded-3xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                            {showStockImages ? (
+                                <img 
+                                    src={image} 
+                                    alt={item.label}
+                                    className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+                                />
+                            ) : (
+                                (() => {
+                                    let Icon = Package
+                                    let colorClass = "text-slate-400"
+                                    let bgClass = "bg-slate-100"
+                                    
+                                    if (cat.includes('chaussure') || cat.includes('basket')) {
+                                        Icon = Footprints
+                                        colorClass = "text-amber-600"
+                                        bgClass = "bg-amber-50"
+                                    } else if (cat.includes('gant')) {
+                                        Icon = Hand
+                                        colorClass = "text-emerald-600"
+                                        bgClass = "bg-emerald-50"
+                                    } else if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka') || cat.includes('gilet')) {
+                                        Icon = Shirt
+                                        colorClass = "text-blue-600"
+                                        bgClass = "bg-blue-50"
+                                    } else if (cat.includes('casque') || cat.includes('protection')) {
+                                        Icon = HardHat
+                                        colorClass = "text-orange-600"
+                                        bgClass = "bg-orange-50"
+                                    }
+                                    
+                                    return (
+                                        <div className={`w-full h-full flex items-center justify-center ${bgClass} transition-colors group-hover:bg-opacity-80`}>
+                                            <Icon className="w-14 h-14" />
+                                        </div>
+                                    )
+                                })()
+                            )}
+                        </div>
+
+                        <div className="flex-1 space-y-3">
+                            <div className="relative w-24 h-24 mx-auto">
+                                <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+                                    <circle
+                                        className="text-slate-100"
+                                        strokeWidth="10"
+                                        stroke="currentColor"
+                                        fill="transparent"
+                                        r="40"
+                                        cx="50"
+                                        cy="50"
+                                    />
+                                    <circle
+                                        className={isLow ? "text-red-500" : "text-brand"}
+                                        strokeWidth="10"
+                                        strokeDasharray={251.2}
+                                        strokeDashoffset={251.2 - (251.2 * progress) / 100}
+                                        strokeLinecap="round"
+                                        stroke="currentColor"
+                                        fill="transparent"
+                                        r="40"
+                                        cx="50"
+                                        cy="50"
+                                    />
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span className="text-xl font-black text-slate-800">{progress}%</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Stock</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Physical Metadata */}
+                    <div className="grid grid-cols-1 gap-2 mb-8 bg-slate-50/50 p-4 rounded-3xl border border-slate-100/50">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Référence</span>
+                            {editingSkuField === 'ref' ? (
+                                <Input
+                                    autoFocus
+                                    className="h-6 text-xs font-black text-slate-700 font-mono text-right bg-white border-brand w-24 p-1"
+                                    value={editMetadataValue}
+                                    onChange={(e) => setEditMetadataValue(e.target.value)}
+                                    onBlur={() => {
+                                        handleSkuMetadataUpdate(item.id, selectedSize, 'ref', editMetadataValue)
+                                        setEditingSkuField(null)
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleSkuMetadataUpdate(item.id, selectedSize, 'ref', editMetadataValue)
+                                            setEditingSkuField(null)
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <span 
+                                    className="text-xs font-black text-slate-700 font-mono cursor-pointer hover:text-brand transition-colors"
+                                    onClick={() => {
+                                        setEditingSkuField('ref')
+                                        setEditMetadataValue(ref)
+                                    }}
+                                >
+                                    {ref}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Emplacement</span>
+                            {editingSkuField === 'location' ? (
+                                <Input
+                                    autoFocus
+                                    className="h-6 text-xs font-black text-brand font-mono text-right bg-white border-brand w-24 p-1"
+                                    value={editMetadataValue}
+                                    onChange={(e) => setEditMetadataValue(e.target.value)}
+                                    onBlur={() => {
+                                        handleSkuMetadataUpdate(item.id, selectedSize, 'location', editMetadataValue)
+                                        setEditingSkuField(null)
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleSkuMetadataUpdate(item.id, selectedSize, 'location', editMetadataValue)
+                                            setEditingSkuField(null)
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <span 
+                                    className="text-xs font-black text-brand font-mono cursor-pointer hover:underline"
+                                    onClick={() => {
+                                        setEditingSkuField('location')
+                                        setEditMetadataValue(location)
+                                    }}
+                                >
+                                    {location}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Action Control Bar */}
+                    <div className="bg-slate-100 rounded-full p-2 flex items-center justify-between shadow-inner h-20">
+                        <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="w-16 h-16 rounded-full bg-brand shadow-lg hover:bg-brand/90 transition-all active:scale-95 text-white disabled:opacity-20"
+                            onClick={() => handleAdjustStock(item.id, selectedSize, -1)}
+                            disabled={qty === 0}
+                        >
+                            <Minus className="w-8 h-8 font-black" />
+                        </Button>
+
+                        <div className="flex flex-col items-center flex-1">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-[-2px]">Actuel</span>
+                            <input
+                                type="number"
+                                value={qty}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value) || 0
+                                    handleAdjustStock(item.id, selectedSize, val - qty)
+                                }}
+                                className="w-20 text-center bg-transparent border-0 focus:ring-0 text-3xl font-black text-slate-900 p-0"
+                            />
+                        </div>
+
+                        <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="w-16 h-16 rounded-full bg-brand shadow-lg hover:bg-brand/90 transition-all active:scale-95 text-white"
+                            onClick={() => handleAdjustStock(item.id, selectedSize, 1)}
+                        >
+                            <Plus className="w-8 h-8 font-black" />
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+        )
+    }
+
+    // Default view: parent item card with size dropdown & quick action buttons
+    return (
+        <Card className="overflow-hidden border-0 shadow-2xl bg-white rounded-[40px] transition-all hover:shadow-blue-900/5 group">
+            <div className="p-6 flex flex-col h-full justify-between">
+                <div>
+                    {/* Top Section: Title & Status */}
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-black text-slate-800 leading-tight tracking-tight">
+                                {item.label}
+                            </h3>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.category}</span>
+                        </div>
+                        {hasLowStock && (
+                            <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                Alerte Taille
+                            </Badge>
+                        )}
+                    </div>
+
+                    {/* Middle Section: Image & Stats */}
+                    <div className="flex items-center gap-4 my-4">
+                        <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                            {showStockImages ? (
+                                <img 
+                                    src={image} 
+                                    alt={item.label}
+                                    className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+                                />
+                            ) : (
+                                (() => {
+                                    let Icon = Package
+                                    let colorClass = "text-slate-400"
+                                    let bgClass = "bg-slate-100"
+                                    
+                                    if (cat.includes('chaussure') || cat.includes('basket')) {
+                                        Icon = Footprints
+                                        colorClass = "text-amber-600"
+                                        bgClass = "bg-amber-50"
+                                    } else if (cat.includes('gant')) {
+                                        Icon = Hand
+                                        colorClass = "text-emerald-600"
+                                        bgClass = "bg-emerald-50"
+                                    } else if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka') || cat.includes('gilet')) {
+                                        Icon = Shirt
+                                        colorClass = "text-blue-600"
+                                        bgClass = "bg-blue-50"
+                                    } else if (cat.includes('casque') || cat.includes('protection')) {
+                                        Icon = HardHat
+                                        colorClass = "text-orange-600"
+                                        bgClass = "bg-orange-50"
+                                    }
+                                    
+                                    return (
+                                        <div className={`w-full h-full flex items-center justify-center ${bgClass} transition-colors group-hover:bg-opacity-80`}>
+                                            <Icon className="w-10 h-10" />
+                                        </div>
+                                    )
+                                })()
+                            )}
+                        </div>
+
+                        <div className="flex-1">
+                            <p className="text-2xl font-black text-slate-800 leading-none">{totalQuantity}</p>
+                            <p className="text-xs font-bold text-slate-400 mt-1">Articles au total</p>
+                        </div>
+                    </div>
+
+                    {/* Sizes Selection Dropdown */}
+                    <div className="mt-4">
+                        <Select onValueChange={(val) => setSelectedSize(val)}>
+                            <SelectTrigger className="w-full bg-slate-50 border-slate-200 text-slate-700 font-bold rounded-2xl h-12">
+                                <SelectValue placeholder="Choisir une taille..." />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white rounded-xl shadow-lg border border-slate-100">
+                                {sortedSizesList.map(size => {
+                                    const qty = item.stock[size] || 0
+                                    return (
+                                        <SelectItem key={size} value={size} className="font-semibold text-slate-700">
+                                            Taille {size} ({qty} en stock)
+                                        </SelectItem>
+                                    )
+                                })}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                {/* Quick Select Buttons Grid */}
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Accès rapide par taille</p>
+                    <div className="flex flex-wrap gap-1.5">
+                        {sortedSizesList.map(size => {
+                            const qty = item.stock[size] || 0
+                            const isLow = qty < item.minThreshold
+                            return (
+                                <button
+                                    key={size}
+                                    onClick={() => setSelectedSize(size)}
+                                    className={`h-8 px-2.5 rounded-lg text-xs font-black transition-all border flex items-center gap-1 cursor-pointer active:scale-95 ${
+                                        qty <= 0 
+                                            ? "bg-red-50 text-red-500 border-red-100 hover:bg-red-100/50" 
+                                            : isLow 
+                                                ? "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50" 
+                                                : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
+                                    }`}
+                                >
+                                    <span>T.{size}</span>
+                                    <span className="opacity-60">({qty})</span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            </div>
+        </Card>
+    )
+}
+
 export default function ManagerDashboard({
     initialRequests,
     initialStock,
@@ -167,6 +537,20 @@ export default function ManagerDashboard({
         return matchesSearch && matchesCategory
     }), [flattenedStock, searchTerm, filterCategory])
 
+    const filteredParentItems = useMemo(() => {
+        return stock.filter(item => {
+            const matchesSearch = item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                Object.entries(item.stock).some(([size, qty]) => {
+                    const metadata = (item.skuMetadata as Record<string, any>)?.[size] || {}
+                    const ref = metadata.ref || `${item.category.substring(0, 2).toUpperCase()}-${size}-TEMP`
+                    return ref.toLowerCase().includes(searchTerm.toLowerCase())
+                })
+            const matchesCategory = filterCategory === "ALL" || item.category === filterCategory
+            return matchesSearch && matchesCategory
+        })
+    }, [stock, searchTerm, filterCategory])
+
     const [activeTab, setActiveTab] = useState("requests")
 
     // Sync state with props when router.refresh() is called
@@ -229,8 +613,6 @@ export default function ManagerDashboard({
 
     // Auth is handled by the parent AdminPage and middleware, but we enforce ADMIN role rigorously here.
     const isAuthorized = userRole === "ADMIN"
-
-    if (!isAuthorized) return null
 
     // Opens the signature dialog instead of validating directly
     const handleValidate = (id: string, employeeName: string) => {
@@ -527,6 +909,8 @@ export default function ManagerDashboard({
         link.click()
         document.body.removeChild(link)
     }
+
+    if (!isAuthorized) return null
 
     return (
         <div className="max-w-7xl mx-auto min-h-screen bg-slate-50 pb-20 relative">
@@ -987,195 +1371,15 @@ export default function ManagerDashboard({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-32 max-w-7xl mx-auto">
-                        {filteredStock.map((sku, index) => {
-                            const isLow = sku.quantity < sku.minThreshold
-                            const progress = Math.min(100, Math.round((sku.quantity / (sku.minThreshold * 2)) * 100))
-                            
-                            return (
-                                <Card key={`${sku.id}-${sku.size}`} className="overflow-hidden border-0 shadow-2xl bg-white rounded-[40px] transition-all hover:shadow-blue-900/5 group">
-                                    <div className="p-6">
-                                        {/* Top Section: Title & Status */}
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="space-y-1">
-                                                <h3 className="text-xl font-black text-slate-800 leading-tight tracking-tight">
-                                                    {sku.label}
-                                                </h3>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-bold text-slate-400 capitalize">Taille: {sku.size}</span>
-                                                </div>
-                                            </div>
-                                            {isLow && (
-                                                <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                                    Critique
-                                                </Badge>
-                                            )}
-                                        </div>
-
-                                        {/* Middle Section: Image & Stats */}
-                                        <div className="flex items-center justify-between gap-6 mb-8 mt-2">
-                                            <div className="relative w-32 h-32 rounded-3xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
-                                                {showStockImages ? (
-                                                    <img 
-                                                        src={sku.image} 
-                                                        alt={sku.label}
-                                                        className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-                                                    />
-                                                ) : (
-                                                    (() => {
-                                                        const cat = sku.category.toLowerCase()
-                                                        let Icon = Package
-                                                        let colorClass = "text-slate-400"
-                                                        let bgClass = "bg-slate-100"
-                                                        
-                                                        if (cat.includes('chaussure') || cat.includes('basket')) {
-                                                            Icon = Footprints
-                                                            colorClass = "text-amber-600"
-                                                            bgClass = "bg-amber-50"
-                                                        } else if (cat.includes('gant')) {
-                                                            Icon = Hand
-                                                            colorClass = "text-emerald-600"
-                                                            bgClass = "bg-emerald-50"
-                                                        } else if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka') || cat.includes('gilet')) {
-                                                            Icon = Shirt
-                                                            colorClass = "text-blue-600"
-                                                            bgClass = "bg-blue-50"
-                                                        } else if (cat.includes('casque') || cat.includes('protection')) {
-                                                            Icon = HardHat
-                                                            colorClass = "text-orange-600"
-                                                            bgClass = "bg-orange-50"
-                                                        }
-                                                        
-                                                        return (
-                                                            <div className={`w-full h-full flex items-center justify-center ${bgClass} transition-colors group-hover:bg-opacity-80`}>
-                                                                <Icon className="w-14 h-14" />
-                                                            </div>
-                                                        )
-                                                    })()
-                                                )}
-                                            </div>
-
-                                            <div className="flex-1 space-y-3">
-                                                <div className="relative w-24 h-24 mx-auto">
-                                                    <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
-                                                        <circle
-                                                            className="text-slate-100"
-                                                            strokeWidth="10"
-                                                            stroke="currentColor"
-                                                            fill="transparent"
-                                                            r="40"
-                                                            cx="50"
-                                                            cy="50"
-                                                        />
-                                                        <circle
-                                                            className={isLow ? "text-red-500" : "text-brand"}
-                                                            strokeWidth="10"
-                                                            strokeDasharray={251.2}
-                                                            strokeDashoffset={251.2 - (251.2 * progress) / 100}
-                                                            strokeLinecap="round"
-                                                            stroke="currentColor"
-                                                            fill="transparent"
-                                                            r="40"
-                                                            cx="50"
-                                                            cy="50"
-                                                        />
-                                                    </svg>
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                        <span className="text-xl font-black text-slate-800">{progress}%</span>
-                                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Stock</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Physical Metadata */}
-                                        <div className="grid grid-cols-1 gap-2 mb-8 bg-slate-50/50 p-4 rounded-3xl border border-slate-100/50">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Référence</span>
-                                                {editingSku?.id === sku.id && editingSku?.size === sku.size && editingSku?.field === 'ref' ? (
-                                                    <Input
-                                                        autoFocus
-                                                        className="h-6 text-xs font-black text-slate-700 font-mono text-right bg-white border-brand w-24 p-1"
-                                                        value={editMetadataValue}
-                                                        onChange={(e) => setEditMetadataValue(e.target.value)}
-                                                        onBlur={() => handleSkuMetadataUpdate(sku.id, sku.size, 'ref', editMetadataValue)}
-                                                        onKeyDown={(e) => e.key === 'Enter' && handleSkuMetadataUpdate(sku.id, sku.size, 'ref', editMetadataValue)}
-                                                    />
-                                                ) : (
-                                                    <span 
-                                                        className="text-xs font-black text-slate-700 font-mono cursor-pointer hover:text-brand transition-colors"
-                                                        onClick={() => {
-                                                            setEditingSku({ id: sku.id, size: sku.size, field: 'ref' })
-                                                            setEditMetadataValue(sku.ref)
-                                                        }}
-                                                    >
-                                                        {sku.ref}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Emplacement</span>
-                                                {editingSku?.id === sku.id && editingSku?.size === sku.size && editingSku?.field === 'location' ? (
-                                                    <Input
-                                                        autoFocus
-                                                        className="h-6 text-xs font-black text-brand font-mono text-right bg-white border-brand w-24 p-1"
-                                                        value={editMetadataValue}
-                                                        onChange={(e) => setEditMetadataValue(e.target.value)}
-                                                        onBlur={() => handleSkuMetadataUpdate(sku.id, sku.size, 'location', editMetadataValue)}
-                                                        onKeyDown={(e) => e.key === 'Enter' && handleSkuMetadataUpdate(sku.id, sku.size, 'location', editMetadataValue)}
-                                                    />
-                                                ) : (
-                                                    <span 
-                                                        className="text-xs font-black text-brand font-mono cursor-pointer hover:underline"
-                                                        onClick={() => {
-                                                            setEditingSku({ id: sku.id, size: sku.size, field: 'location' })
-                                                            setEditMetadataValue(sku.location)
-                                                        }}
-                                                    >
-                                                        {sku.location}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Action Control Bar */}
-                                        <div className="bg-slate-100 rounded-full p-2 flex items-center justify-between shadow-inner h-20">
-                                            <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                className="w-16 h-16 rounded-full bg-brand shadow-lg hover:bg-brand/90 transition-all active:scale-95 text-white disabled:opacity-20"
-                                                onClick={() => handleAdjustStock(sku.id, sku.size, -1)}
-                                                disabled={sku.quantity === 0}
-                                            >
-                                                <Minus className="w-8 h-8 font-black" />
-                                            </Button>
-
-                                            <div className="flex flex-col items-center flex-1">
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-[-2px]">Actuel</span>
-                                                <input
-                                                    type="number"
-                                                    value={sku.quantity}
-                                                    onChange={(e) => {
-                                                        const val = parseInt(e.target.value) || 0
-                                                        handleAdjustStock(sku.id, sku.size, val - sku.quantity)
-                                                    }}
-                                                    className="w-20 text-center bg-transparent border-0 focus:ring-0 text-3xl font-black text-slate-900 p-0"
-                                                />
-                                            </div>
-
-                                            <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                className="w-16 h-16 rounded-full bg-brand shadow-lg hover:bg-brand/90 transition-all active:scale-95 text-white"
-                                                onClick={() => handleAdjustStock(sku.id, sku.size, 1)}
-                                            >
-                                                <Plus className="w-8 h-8 font-black" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </Card>
-                            )
-                        })}
+                        {filteredParentItems.map((item) => (
+                            <StockItemCard
+                                key={item.id}
+                                item={item}
+                                showStockImages={showStockImages}
+                                handleAdjustStock={handleAdjustStock}
+                                handleSkuMetadataUpdate={handleSkuMetadataUpdate}
+                            />
+                        ))}
                     </div>
                 </TabsContent>
 
