@@ -92,6 +92,87 @@ interface AuditLog {
     createdAt: string
 }
 
+const BonnetIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <circle cx="12" cy="5" r="2.5" />
+        <path d="M5 16.5C5 10 8.5 7.5 12 7.5C15.5 7.5 19 10 19 16.5" />
+        <rect x="3" y="16.5" width="18" height="4" rx="2" />
+    </svg>
+)
+
+const SocksIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M9 4h6v8l4 3v5h-6v-3l-4-3V4Z" />
+        <line x1="9" y1="7" x2="15" y2="7" />
+    </svg>
+)
+
+const NeckWarmerIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <ellipse cx="12" cy="7" rx="8" ry="3" />
+        <path d="M4 7v9c0 1.66 3.58 3 8 3s8-1.34 8-3V7" />
+        <ellipse cx="12" cy="16" rx="8" ry="3" strokeDasharray="3 3" />
+    </svg>
+)
+
+function getCategoryIcon(category: string) {
+    const cat = category.toLowerCase()
+    if (cat.includes('chaussure') || cat.includes('basket') || cat.includes('botte')) {
+        return {
+            Icon: Footprints,
+            colorClass: "text-amber-600",
+            bgClass: "bg-amber-50"
+        }
+    }
+    if (cat.includes('gant')) {
+        return {
+            Icon: Hand,
+            colorClass: "text-emerald-600",
+            bgClass: "bg-emerald-50"
+        }
+    }
+    if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka') || cat.includes('gilet')) {
+        return {
+            Icon: Shirt,
+            colorClass: "text-blue-600",
+            bgClass: "bg-blue-50"
+        }
+    }
+    if (cat.includes('casque') || cat.includes('protection')) {
+        return {
+            Icon: HardHat,
+            colorClass: "text-orange-600",
+            bgClass: "bg-orange-50"
+        }
+    }
+    if (cat.includes('bonnet')) {
+        return {
+            Icon: BonnetIcon,
+            colorClass: "text-cyan-600",
+            bgClass: "bg-cyan-50"
+        }
+    }
+    if (cat.includes('chaussette')) {
+        return {
+            Icon: SocksIcon,
+            colorClass: "text-rose-600",
+            bgClass: "bg-rose-50"
+        }
+    }
+    if (cat.includes('cou')) {
+        return {
+            Icon: NeckWarmerIcon,
+            colorClass: "text-indigo-600",
+            bgClass: "bg-indigo-50"
+        }
+    }
+    return {
+        Icon: Package,
+        colorClass: "text-slate-400",
+        bgClass: "bg-slate-100"
+    }
+}
+
 interface StockItemCardProps {
     item: StockItem
     showStockImages: boolean
@@ -172,32 +253,11 @@ function StockItemCard({
                                     className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
                                 />
                             ) : (
-                                (() => {
-                                    let Icon = Package
-                                    let colorClass = "text-slate-400"
-                                    let bgClass = "bg-slate-100"
-                                    
-                                    if (cat.includes('chaussure') || cat.includes('basket')) {
-                                        Icon = Footprints
-                                        colorClass = "text-amber-600"
-                                        bgClass = "bg-amber-50"
-                                    } else if (cat.includes('gant')) {
-                                        Icon = Hand
-                                        colorClass = "text-emerald-600"
-                                        bgClass = "bg-emerald-50"
-                                    } else if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka') || cat.includes('gilet')) {
-                                        Icon = Shirt
-                                        colorClass = "text-blue-600"
-                                        bgClass = "bg-blue-50"
-                                    } else if (cat.includes('casque') || cat.includes('protection')) {
-                                        Icon = HardHat
-                                        colorClass = "text-orange-600"
-                                        bgClass = "bg-orange-50"
-                                    }
-                                    
+                                 (() => {
+                                    const { Icon, colorClass, bgClass } = getCategoryIcon(item.category)
                                     return (
                                         <div className={`w-full h-full flex items-center justify-center ${bgClass} transition-colors group-hover:bg-opacity-80`}>
-                                            <Icon className="w-14 h-14" />
+                                            <Icon className={`w-14 h-14 ${colorClass}`} />
                                         </div>
                                     )
                                 })()
@@ -374,31 +434,10 @@ function StockItemCard({
                                 />
                             ) : (
                                 (() => {
-                                    let Icon = Package
-                                    let colorClass = "text-slate-400"
-                                    let bgClass = "bg-slate-100"
-                                    
-                                    if (cat.includes('chaussure') || cat.includes('basket')) {
-                                        Icon = Footprints
-                                        colorClass = "text-amber-600"
-                                        bgClass = "bg-amber-50"
-                                    } else if (cat.includes('gant')) {
-                                        Icon = Hand
-                                        colorClass = "text-emerald-600"
-                                        bgClass = "bg-emerald-50"
-                                    } else if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka') || cat.includes('gilet')) {
-                                        Icon = Shirt
-                                        colorClass = "text-blue-600"
-                                        bgClass = "bg-blue-50"
-                                    } else if (cat.includes('casque') || cat.includes('protection')) {
-                                        Icon = HardHat
-                                        colorClass = "text-orange-600"
-                                        bgClass = "bg-orange-50"
-                                    }
-                                    
+                                    const { Icon, colorClass, bgClass } = getCategoryIcon(item.category)
                                     return (
                                         <div className={`w-full h-full flex items-center justify-center ${bgClass} transition-colors group-hover:bg-opacity-80`}>
-                                            <Icon className="w-10 h-10" />
+                                            <Icon className={`w-10 h-10 ${colorClass}`} />
                                         </div>
                                     )
                                 })()
