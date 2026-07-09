@@ -62,6 +62,14 @@ export async function createRequests(formData: {
             include: { items: true }
         });
 
+        // Envoyer la notification Teams de manière asynchrone
+        sendTeamsNotification({
+            employeeName: fullName,
+            service,
+            reason,
+            items
+        }).catch(err => console.error("Failed to notify Teams:", err));
+
         revalidatePath("/");
         revalidatePath("/admin");
         return { success: true, count: 1 };
@@ -303,3 +311,49 @@ export async function updateSkuMetadata(categoryId: string, size: string, ref: s
         return { success: false, error: "Erreur lors de la mise à jour des métadonnées" };
     }
 }
+
+async function sendTeamsNotification(requestData: {
+    employeeName: string;
+    service: string;
+    reason: string;
+    items: { category: string; size: string }[];
+}) {
+    try {
+        const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
+        if (!webhookUrl) {
+            console.log("Teams Webhook URL is not configured. Skipping notification.");
+            return;
+        }
+
+        const itemsList = requestData.items.map(i => `- ${i.category} (Taille: ${i.size})`).join("\n");
+
+        const cardPayload = {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "themeColor": "0078D7",
+            "summary": "Nouvelle demande d'EPI",
+            "sections": [{
+                "activityTitle": "🔔 Nouvelle demande d'EPI soumise !",
+                "activitySubtitle": `Par ${requestData.employeeName} (${requestData.service})`,
+                "facts": [
+                    { "name": "Motif", "value": requestData.reason },
+                    { "name": "Équipements", "value": itemsList }
+                ],
+                "markdown": true
+            }]
+        };
+
+        const response = await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cardPayload)
+        });
+
+        if (!response.ok) {
+            console.error(`Teams Webhook failed with status ${response.status}: ${await response.text()}`);
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'envoi de la notification Teams :", error);
+    }
+}
+

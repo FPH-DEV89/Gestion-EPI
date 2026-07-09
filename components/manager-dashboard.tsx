@@ -15,7 +15,7 @@ import { sortSizes } from "@/lib/utils"
 import { 
     Package, ClipboardList, Settings, Save, X, Check, History, Download, 
     BarChart3, ShieldAlert, Users, LogOut, ChevronLeft, MoreHorizontal,
-    Bell, Plus, Minus, PenLine
+    Bell, Plus, Minus, PenLine, Shirt, Footprints, Hand, HardHat, Eye, EyeOff
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import StatisticsDashboard from "./statistics-dashboard"
@@ -111,6 +111,7 @@ export default function ManagerDashboard({
     const [stock, setStock] = useState(initialStock)
     const [searchTerm, setSearchTerm] = useState("")
     const [filterCategory, setFilterCategory] = useState("ALL")
+    const [showStockImages, setShowStockImages] = useState(false)
 
     const userInitials = useMemo(() => {
         if (userName && userName.toLowerCase() !== "inconnu") {
@@ -527,7 +528,7 @@ export default function ManagerDashboard({
     }
 
     return (
-        <div className="max-w-6xl mx-auto min-h-screen bg-slate-50 pb-20 relative">
+        <div className="max-w-7xl mx-auto min-h-screen bg-slate-50 pb-20 relative">
             {/* World-Class STEF Header (Action Feed Style) */}
             <div className="bg-[#135bec] text-white pt-8 pb-32 px-6 rounded-b-[40px] shadow-lg mb-8 relative">
                 <div className="flex justify-between items-center mb-6">
@@ -627,6 +628,28 @@ export default function ManagerDashboard({
                         className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50 rounded-2xl pl-12 h-12 backdrop-blur-md focus:bg-white/20 transition-all"
                     />
                 </div>
+
+                {/* Desktop Navigation Menu (hidden on mobile) */}
+                <div className="hidden md:flex justify-center gap-2 max-w-2xl mx-auto mt-6 bg-white/10 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+                    {navItems.map((item) => {
+                        const isActive = activeTab === item.id;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => {
+                                    setActiveTab(item.id);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 relative font-bold text-sm ${
+                                    isActive ? "bg-white text-[#135bec] shadow-sm" : "text-white/80 hover:text-white hover:bg-white/10"
+                                }`}
+                            >
+                                <item.icon className="w-4 h-4" />
+                                <span>{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             <div className="mt-8 px-4">
@@ -642,7 +665,7 @@ export default function ManagerDashboard({
                 {/* Dashboard tab removed — Demandes is now the landing page */}
 
                 <TabsContent value="requests" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="max-w-3xl mx-auto space-y-6 pb-24">
+                    <div className="max-w-7xl mx-auto space-y-6 pb-24 px-4">
                         <div className="flex items-start justify-between px-4 mb-2">
                             <div>
                                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
@@ -689,7 +712,8 @@ export default function ManagerDashboard({
                                 <p className="text-sm font-bold opacity-60">Aucune demande en attente pour le moment.</p>
                             </div>
                         ) : (
-                            requests.filter(r => r.status === "Pending").map(req => (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {requests.filter(r => r.status === "Pending").map(req => (
                                 <div key={req.id} className="bg-white border-none shadow-[0_10px_40px_rgba(0,0,0,0.04)] rounded-[40px] overflow-hidden group hover:shadow-[0_20px_60px_rgba(19,91,236,0.08)] transition-all duration-500 border border-transparent hover:border-blue-100/50">
                                     {/* Header de la carte */}
                                     <div className="p-8 border-b border-slate-50 flex justify-between items-start bg-gradient-to-br from-white to-slate-50/30">
@@ -768,7 +792,8 @@ export default function ManagerDashboard({
                                         </div>
                                     </div>
                                 </div>
-                            ))
+                                ))}
+                            </div>
                         )}
                     </div>
                 </TabsContent>
@@ -793,14 +818,25 @@ export default function ManagerDashboard({
                                 <CardTitle>État des stocks</CardTitle>
                                 <CardDescription>Consultez et modifiez les quantités en stock.</CardDescription>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-brand border-brand/20 hover:bg-brand/5"
-                                onClick={exportInventoryToCSV}
-                            >
-                                <Download className="w-4 h-4 mr-2" /> Exporter Inventaire
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={`transition-all duration-300 rounded-xl ${showStockImages ? 'bg-blue-50 text-[#135bec] border-blue-200 hover:bg-blue-100' : 'text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                                    onClick={() => setShowStockImages(!showStockImages)}
+                                >
+                                    {showStockImages ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                                    {showStockImages ? "Photos" : "Sans Photos"}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-brand border-brand/20 hover:bg-brand/5 rounded-xl"
+                                    onClick={exportInventoryToCSV}
+                                >
+                                    <Download className="w-4 h-4 mr-2" /> Exporter Inventaire
+                                </Button>
+                            </div>
                         </CardHeader>
                     </Card>
 
@@ -826,7 +862,7 @@ export default function ManagerDashboard({
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 pb-32 max-w-md mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-32 max-w-7xl mx-auto">
                         {filteredStock.map((sku, index) => {
                             const isLow = sku.quantity < sku.minThreshold
                             const progress = Math.min(100, Math.round((sku.quantity / (sku.minThreshold * 2)) * 100))
@@ -854,12 +890,45 @@ export default function ManagerDashboard({
 
                                         {/* Middle Section: Image & Stats */}
                                         <div className="flex items-center justify-between gap-6 mb-8 mt-2">
-                                            <div className="relative w-32 h-32 rounded-3xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100 flex-shrink-0">
-                                                <img 
-                                                    src={sku.image} 
-                                                    alt={sku.label}
-                                                    className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-                                                />
+                                            <div className="relative w-32 h-32 rounded-3xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                                                {showStockImages ? (
+                                                    <img 
+                                                        src={sku.image} 
+                                                        alt={sku.label}
+                                                        className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+                                                    />
+                                                ) : (
+                                                    (() => {
+                                                        const cat = sku.category.toLowerCase()
+                                                        let Icon = Package
+                                                        let colorClass = "text-slate-400"
+                                                        let bgClass = "bg-slate-100"
+                                                        
+                                                        if (cat.includes('chaussure') || cat.includes('basket')) {
+                                                            Icon = Footprints
+                                                            colorClass = "text-amber-600"
+                                                            bgClass = "bg-amber-50"
+                                                        } else if (cat.includes('gant')) {
+                                                            Icon = Hand
+                                                            colorClass = "text-emerald-600"
+                                                            bgClass = "bg-emerald-50"
+                                                        } else if (cat.includes('veste') || cat.includes('polaire') || cat.includes('parka') || cat.includes('gilet')) {
+                                                            Icon = Shirt
+                                                            colorClass = "text-blue-600"
+                                                            bgClass = "bg-blue-50"
+                                                        } else if (cat.includes('casque') || cat.includes('protection')) {
+                                                            Icon = HardHat
+                                                            colorClass = "text-orange-600"
+                                                            bgClass = "bg-orange-50"
+                                                        }
+                                                        
+                                                        return (
+                                                            <div className={`w-full h-full flex items-center justify-center ${bgClass} transition-colors group-hover:bg-opacity-80`}>
+                                                                <Icon className="w-14 h-14" />
+                                                            </div>
+                                                        )
+                                                    })()
+                                                )}
                                             </div>
 
                                             <div className="flex-1 space-y-3">
@@ -1000,7 +1069,7 @@ export default function ManagerDashboard({
             </Tabs>
         </div>
             {/* World-Class Mobile Bottom Navigation Dock */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-4 max-w-md">
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-4 max-w-md md:hidden">
                 <div className="bg-white/95 backdrop-blur-xl rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/20 p-2 flex items-center justify-between mx-auto max-w-md">
                     {navItems.filter(i => i.isPrimary).map((item) => {
                         const isActive = activeTab === item.id;

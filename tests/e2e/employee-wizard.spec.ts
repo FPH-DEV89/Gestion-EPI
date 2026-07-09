@@ -36,7 +36,7 @@ test.describe('EPI Manager - Parcours Employé', () => {
 
     // 6. Vérifier le succès de la soumission
     // L'écran final doit afficher soit le succès en ligne, soit le succès hors-ligne
-    const successTitle = page.locator('h3:has-text("Demande Envoyée"), h2:has-text("Demande Enregistrée Hors-ligne")').first();
+    const successTitle = page.locator('h3:has-text("Demande Envoyée"), h3:has-text("Demande Enregistrée Hors-ligne"), h2:has-text("Demande Enregistrée Hors-ligne")').first();
     await expect(successTitle).toBeVisible({ timeout: 15000 });
   });
 });

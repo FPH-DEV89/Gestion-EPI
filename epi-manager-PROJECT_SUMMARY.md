@@ -45,6 +45,9 @@ Ce document sert de **base de connaissances ultra-légère** pour les assistants
 ### 📋 G. Traçabilité & Journaux d'Audit (Compliance)
 *   **Logs de Sécurité ([components/audit-log-view.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/audit-log-view.tsx)) :** Tableau d'audit historique listant de manière immuable chaque action sensible (validation de demande, modification manuelle des stocks, synchronisation hors-ligne).
 
+### 🔔 H. Notifications de Demandes
+*   **Alertes Microsoft Teams ([app/actions.ts](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/app/actions.ts)) :** Envoi automatique et asynchrone d'une "MessageCard" Teams structurée détaillant les équipements demandés, le motif et le collaborateur dès la soumission en ligne d'une nouvelle demande (via variable `TEAMS_WEBHOOK_URL`).
+
 ---
 
 ## 🧪 3. Configuration QA & Environnement Critiques
