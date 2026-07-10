@@ -83,3 +83,16 @@ model AuditLog {
 
   @@index([userId, createdAt])
 }
+
+model PriceHistory {
+  id          String   @id @default(cuid())
+  stockItemId String
+  category    String
+  oldPrice    Float
+  newPrice    Float
+  changedById String?
+  createdAt   DateTime @default(now())
+
+  @@index([stockItemId, createdAt])
+  @@index([category])
+}

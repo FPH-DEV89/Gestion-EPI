@@ -9,7 +9,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { validateRequest, rejectRequest, updateStock, updateSkuMetadata, updateMinThreshold } from "@/app/actions"
+import { validateRequest, rejectRequest, updateStock, updateSkuMetadata, updateMinThreshold, updatePrice } from "@/app/actions"
 import { handleSignOut } from "@/app/lib/actions"
 import { sortSizes } from "@/lib/utils"
 import { 
@@ -179,6 +179,8 @@ interface StockItemCardProps {
     handleAdjustStock: (itemId: string, size: string, delta: number) => Promise<void>
     handleSkuMetadataUpdate: (itemId: string, size: string, field: 'ref' | 'location', value: string) => Promise<void>
     handleUpdateMinThreshold: (itemId: string, threshold: number) => Promise<void>
+    handleUpdatePrice: (itemId: string, price: number) => Promise<void>
+    daysRemaining?: number | null
 }
 
 function StockItemCard({
@@ -186,17 +188,25 @@ function StockItemCard({
     showStockImages,
     handleAdjustStock,
     handleSkuMetadataUpdate,
-    handleUpdateMinThreshold
+    handleUpdateMinThreshold,
+    handleUpdatePrice,
+    daysRemaining
 }: StockItemCardProps) {
     const [selectedSize, setSelectedSize] = useState<string | null>(null)
     const [editingSkuField, setEditingSkuField] = useState<'ref' | 'location' | null>(null)
     const [editMetadataValue, setEditMetadataValue] = useState("")
     const [editingThreshold, setEditingThreshold] = useState(false)
     const [editThresholdValue, setEditThresholdValue] = useState<number | "">(item.minThreshold)
+    const [editingPrice, setEditingPrice] = useState(false)
+    const [editPriceValue, setEditPriceValue] = useState<number | "">(item.price)
 
     useEffect(() => {
         setEditThresholdValue(item.minThreshold)
     }, [item.minThreshold])
+
+    useEffect(() => {
+        setEditPriceValue(item.price)
+    }, [item.price])
 
     const totalQuantity = Object.values(item.stock).reduce((a, b) => a + b, 0)
     const hasLowStock = Object.entries(item.stock).some(([size, qty]) => qty < item.minThreshold)
@@ -532,6 +542,59 @@ function StockItemCard({
                         <div className="flex-1">
                             <p className="text-2xl font-black text-slate-800 leading-none">{totalQuantity}</p>
                             <p className="text-xs font-bold text-slate-400 mt-1">Articles au total</p>
+                            <div className="flex items-center gap-1.5 mt-2">
+                                {editingPrice ? (
+                                    <Input
+                                        autoFocus
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        className="h-6 text-xs font-black text-emerald-700 bg-white border-emerald-300 w-20 p-1 text-right"
+                                        value={editPriceValue}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setEditPriceValue(val === "" ? "" : (parseFloat(val) || 0));
+                                        }}
+                                        onBlur={() => {
+                                            const finalVal = editPriceValue === "" ? 0 : editPriceValue;
+                                            handleUpdatePrice(item.id, finalVal)
+                                            setEditingPrice(false)
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                const finalVal = editPriceValue === "" ? 0 : editPriceValue;
+                                                handleUpdatePrice(item.id, finalVal)
+                                                setEditingPrice(false)
+                                            }
+                                            if (e.key === 'Escape') {
+                                                setEditPriceValue(item.price)
+                                                setEditingPrice(false)
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <button
+                                        className="text-xs font-black text-emerald-600 hover:text-emerald-800 cursor-pointer flex items-center gap-0.5 border-none bg-transparent p-0 transition-colors"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEditingPrice(true)
+                                            setEditPriceValue(item.price)
+                                        }}
+                                        title="Modifier le prix unitaire"
+                                    >
+                                        {item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                                        <PenLine className="w-2.5 h-2.5 inline" />
+                                    </button>
+                                )}
+                            </div>
+                            {daysRemaining !== undefined && daysRemaining !== null && (
+                                <div className={`flex items-center gap-1 mt-1.5 text-[10px] font-black uppercase tracking-wider ${
+                                    daysRemaining < 0 ? 'text-slate-400' : daysRemaining < 30 ? 'text-red-500' : daysRemaining < 60 ? 'text-amber-500' : 'text-emerald-500'
+                                }`}>
+                                    <BarChart3 className="w-3 h-3" />
+                                    {daysRemaining < 0 ? 'N/A' : `~${daysRemaining}j de stock`}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -674,6 +737,30 @@ export default function ManagerDashboard({
             return matchesSearch && matchesCategory
         })
     }, [stock, searchTerm, filterCategory])
+
+    // Compute days remaining per stock item based on 90 days consumption
+    const daysRemainingMap = useMemo(() => {
+        const map: Record<string, number> = {}
+        const ninetyDaysAgo = new Date()
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+        
+        const recentOrdered = requests.filter(r => r.status === "Ordered" && new Date(r.createdAt) >= ninetyDaysAgo)
+        const catConsumption: Record<string, number> = {}
+        recentOrdered.forEach(r => {
+            r.items.forEach(item => {
+                catConsumption[item.category] = (catConsumption[item.category] || 0) + 1
+            })
+        })
+        
+        stock.forEach(item => {
+            const totalStock = Object.values(item.stock).reduce((a, b) => a + b, 0)
+            const consumed = catConsumption[item.category] || 0
+            const dailyRate = consumed / 90
+            map[item.id] = dailyRate > 0 ? Math.round(totalStock / dailyRate) : -1
+        })
+        
+        return map
+    }, [stock, requests])
 
     const [activeTab, setActiveTab] = useState("requests")
 
@@ -982,6 +1069,30 @@ export default function ManagerDashboard({
                     }
                 })
                 return { ...item, minThreshold: threshold }
+            }
+            return item
+        }))
+    }
+
+    const handleUpdatePrice = async (itemId: string, price: number) => {
+        setStock(prev => prev.map(item => {
+            if (item.id === itemId) {
+                updatePrice(itemId, price).then(res => {
+                    if (!res.success) {
+                        toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: res.error || "Impossible de mettre à jour le prix."
+                        })
+                    } else {
+                        toast({
+                            title: "✅ Prix mis à jour",
+                            description: `Le prix de ${item.label} a été défini à ${price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}.`,
+                            className: "bg-emerald-50 border-emerald-200 text-emerald-800",
+                        })
+                    }
+                })
+                return { ...item, price }
             }
             return item
         }))
@@ -1518,6 +1629,8 @@ export default function ManagerDashboard({
                                 handleAdjustStock={handleAdjustStock}
                                 handleSkuMetadataUpdate={handleSkuMetadataUpdate}
                                 handleUpdateMinThreshold={handleUpdateMinThreshold}
+                                handleUpdatePrice={handleUpdatePrice}
+                                daysRemaining={daysRemainingMap[item.id]}
                             />
                         ))}
                     </div>

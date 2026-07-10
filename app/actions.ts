@@ -391,6 +391,66 @@ export async function updateMinThreshold(categoryId: string, threshold: number) 
     }
 }
 
+export async function updatePrice(categoryId: string, newPrice: number) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id || (session.user as any).role !== "ADMIN") {
+            return { success: false, error: "Non autorisé. Accès administrateur requis." };
+        }
+
+        if (newPrice < 0 || isNaN(newPrice)) {
+            return { success: false, error: "Le prix doit être un nombre positif." };
+        }
+
+        const success = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const stockItem = await tx.stockItem.findUnique({
+                where: { id: categoryId },
+            });
+
+            if (!stockItem) return null;
+
+            const oldPrice = stockItem.price;
+
+            // Don't update if price hasn't changed
+            if (oldPrice === newPrice) return true;
+
+            // Update the price
+            await tx.stockItem.update({
+                where: { id: categoryId },
+                data: { price: newPrice },
+            });
+
+            // Record price history
+            await tx.priceHistory.create({
+                data: {
+                    stockItemId: categoryId,
+                    category: stockItem.category,
+                    oldPrice,
+                    newPrice,
+                    changedById: session!.user!.id as string,
+                },
+            });
+
+            await recordAuditLog(tx, session!.user!.id as string, "UPDATE_PRICE", {
+                category: stockItem.category,
+                oldPrice,
+                newPrice
+            });
+
+            return true;
+        });
+
+        if (!success) return { success: false, error: "Équipement introuvable" };
+
+        revalidatePath("/");
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update price:", error);
+        return { success: false, error: "Erreur lors de la mise à jour du prix" };
+    }
+}
+
 async function sendTeamsLowStockAlert(itemLabel: string, category: string, size: string, currentStock: number, threshold: number) {
     try {
         const webhookUrl = process.env.TEAMS_WEBHOOK_URL;

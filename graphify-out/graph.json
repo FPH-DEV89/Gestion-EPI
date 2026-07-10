@@ -1,0 +1,280 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "createRequests",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "app_actions_createrequests",
+      "community": 1,
+      "norm_label": "createrequests"
+    },
+    {
+      "label": "createRequest",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L82",
+      "_origin": "ast",
+      "id": "app_actions_createrequest",
+      "community": 0,
+      "norm_label": "createrequest"
+    },
+    {
+      "label": "validateRequest",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L106",
+      "_origin": "ast",
+      "id": "app_actions_validaterequest",
+      "community": 5,
+      "norm_label": "validaterequest"
+    },
+    {
+      "label": "rejectRequest",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L192",
+      "_origin": "ast",
+      "id": "app_actions_rejectrequest",
+      "community": 2,
+      "norm_label": "rejectrequest"
+    },
+    {
+      "label": "updateStock",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L223",
+      "_origin": "ast",
+      "id": "app_actions_updatestock",
+      "community": 4,
+      "norm_label": "updatestock"
+    },
+    {
+      "label": "updateSkuMetadata",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L265",
+      "_origin": "ast",
+      "id": "app_actions_updateskumetadata",
+      "community": 3,
+      "norm_label": "updateskumetadata"
+    },
+    {
+      "label": "AdminLayout",
+      "file_type": "code",
+      "source_file": "app/admin/layout.tsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "app_admin_layout_adminlayout",
+      "community": 6,
+      "norm_label": "adminlayout"
+    },
+    {
+      "label": "{ GET, POST }",
+      "file_type": "code",
+      "source_file": "app/api/auth/[...nextauth]/route.ts",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "app_api_auth_nextauth_route_get_post",
+      "community": 7,
+      "norm_label": "{ get, post }"
+    },
+    {
+      "label": "RootLayout",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "app_layout_rootlayout",
+      "community": 8,
+      "norm_label": "rootlayout"
+    },
+    {
+      "label": "authenticate",
+      "file_type": "code",
+      "source_file": "app/lib/actions.ts",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "app_lib_actions_authenticate",
+      "community": 9,
+      "norm_label": "authenticate"
+    },
+    {
+      "label": "handleSignOut",
+      "file_type": "code",
+      "source_file": "app/lib/actions.ts",
+      "source_location": "L25",
+      "_origin": "ast",
+      "id": "app_lib_actions_handlesignout",
+      "community": 10,
+      "norm_label": "handlesignout"
+    },
+    {
+      "label": "OfflineAction",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "app_lib_offline_queue_offlineaction",
+      "community": 14,
+      "norm_label": "offlineaction"
+    },
+    {
+      "label": "addOfflineAction",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L50",
+      "_origin": "ast",
+      "id": "app_lib_offline_queue_addofflineaction",
+      "community": 11,
+      "norm_label": "addofflineaction"
+    },
+    {
+      "label": "getOfflineActions",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L65",
+      "_origin": "ast",
+      "id": "app_lib_offline_queue_getofflineactions",
+      "community": 12,
+      "norm_label": "getofflineactions"
+    },
+    {
+      "label": "removeOfflineAction",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L84",
+      "_origin": "ast",
+      "id": "app_lib_offline_queue_removeofflineaction",
+      "community": 15,
+      "norm_label": "removeofflineaction"
+    },
+    {
+      "label": "getOfflineQueueCount",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L99",
+      "_origin": "ast",
+      "id": "app_lib_offline_queue_getofflinequeuecount",
+      "community": 13,
+      "norm_label": "getofflinequeuecount"
+    },
+    {
+      "label": "LoginPage",
+      "file_type": "code",
+      "source_file": "app/login/page.tsx",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "app_login_page_loginpage",
+      "community": 16,
+      "norm_label": "loginpage"
+    },
+    {
+      "label": "HomePage",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "app_page_homepage",
+      "community": 17,
+      "norm_label": "homepage"
+    },
+    {
+      "label": "UnauthorizedPage",
+      "file_type": "code",
+      "source_file": "app/unauthorized/page.tsx",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "app_unauthorized_page_unauthorizedpage",
+      "community": 18,
+      "norm_label": "unauthorizedpage"
+    },
+    {
+      "label": "EmployeeDashboard",
+      "file_type": "code",
+      "source_file": "components/employee-dashboard.tsx",
+      "source_location": "L17",
+      "_origin": "ast",
+      "id": "components_employee_dashboard_employeedashboard",
+      "community": 19,
+      "norm_label": "employeedashboard"
+    },
+    {
+      "label": "Navbar",
+      "file_type": "code",
+      "source_file": "components/navbar.tsx",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "components_navbar_navbar",
+      "community": 20,
+      "norm_label": "navbar"
+    },
+    {
+      "label": "StatisticsDashboard",
+      "file_type": "code",
+      "source_file": "components/statistics-dashboard.bak.tsx",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "components_statistics_dashboard_bak_statisticsdashboard",
+      "community": 21,
+      "norm_label": "statisticsdashboard"
+    },
+    {
+      "label": "ButtonProps",
+      "file_type": "code",
+      "source_file": "components/ui/button.tsx",
+      "source_location": "L32",
+      "_origin": "ast",
+      "id": "components_ui_button_buttonprops",
+      "community": 22,
+      "norm_label": "buttonprops"
+    },
+    {
+      "label": "InputProps",
+      "file_type": "code",
+      "source_file": "components/ui/input.tsx",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "components_ui_input_inputprops",
+      "community": 23,
+      "norm_label": "inputprops"
+    },
+    {
+      "label": "OfflineDB",
+      "file_type": "code",
+      "source_file": "lib/offline-db.ts",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "lib_offline_db_offlinedb",
+      "community": 24,
+      "norm_label": "offlinedb"
+    },
+    {
+      "label": "cn",
+      "file_type": "code",
+      "source_file": "lib/utils.ts",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "lib_utils_cn",
+      "community": 25,
+      "norm_label": "cn"
+    },
+    {
+      "label": "sortSizes",
+      "file_type": "code",
+      "source_file": "lib/utils.ts",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "lib_utils_sortsizes",
+      "community": 26,
+      "norm_label": "sortsizes"
+    }
+  ],
+  "links": [],
+  "hyperedges": [],
+  "built_at_commit": "32e9a520748edd7be9c12e6f1a977c5d4aa6cad7"
+}

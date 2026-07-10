@@ -141,6 +141,27 @@ export default function StatisticsDashboard({
     const [activePieIndex, setActivePieIndex] = useState(0)
     const [highlightedService, setHighlightedService] = useState<string | null>(null)
     const [showBudget, setShowBudget] = useState(false)
+    const [selectedMonth, setSelectedMonth] = useState<Date | null>(null) // null = all data
+
+    // Month navigation helpers
+    const navigateMonth = (direction: number) => {
+        setSelectedMonth(prev => {
+            const base = prev || new Date()
+            const newDate = new Date(base.getFullYear(), base.getMonth() + direction, 1)
+            return newDate
+        })
+    }
+
+    const getMonthLabel = (date: Date) => {
+        return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+            .replace(/^\w/, c => c.toUpperCase())
+    }
+
+    const isCurrentMonth = (date: Date | null) => {
+        if (!date) return false
+        const now = new Date()
+        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+    }
 
     const downloadCSV = (content: string, filename: string) => {
         const blob = new Blob(["\uFEFF" + content], { type: 'text/csv;charset=utf-8;' })
@@ -156,11 +177,20 @@ export default function StatisticsDashboard({
 
     // ─── KPIs Calculation ───────────────────────────────────────────────────
     const orderedRequests = requests.filter(r => r.status === "Ordered")
-    const totalEPI = orderedRequests.reduce((acc, r) => acc + r.items.length, 0)
+
+    // Filter by selected month if one is chosen
+    const filteredOrdered = selectedMonth 
+        ? orderedRequests.filter(r => {
+            const d = new Date(r.createdAt)
+            return d.getMonth() === selectedMonth.getMonth() && d.getFullYear() === selectedMonth.getFullYear()
+        })
+        : orderedRequests
+
+    const totalEPI = filteredOrdered.reduce((acc, r) => acc + r.items.length, 0)
     const totalRequests = requests.length
     const validationRate = totalRequests > 0 ? Math.round((orderedRequests.length / totalRequests) * 100) : 0
-    const activeServices = new Set(orderedRequests.map(r => r.service)).size
-    const totalBudget = orderedRequests.reduce((total, req) =>
+    const activeServices = new Set(filteredOrdered.map(r => r.service)).size
+    const totalBudget = filteredOrdered.reduce((total, req) =>
         total + req.items.reduce((sum, item) => sum + (item.snapshottedPrice || 0), 0), 0)
 
     const now = new Date()
@@ -201,7 +231,7 @@ export default function StatisticsDashboard({
         return map
     }, [stock])
 
-    const epiCounts = orderedRequests.reduce((acc: Record<string, number>, r) => {
+    const epiCounts = filteredOrdered.reduce((acc: Record<string, number>, r) => {
         r.items.forEach(item => { 
             const label = categoryLabelMap[item.category] || item.category
             acc[label] = (acc[label] || 0) + 1 
@@ -215,7 +245,7 @@ export default function StatisticsDashboard({
         .map(([name, value]) => ({ name, value, total: totalRequestsCount }))
 
     const serviceData = Object.entries(
-        orderedRequests.reduce((acc: Record<string, { count: number; cost: number }>, r) => {
+        filteredOrdered.reduce((acc: Record<string, { count: number; cost: number }>, r) => {
             if (!acc[r.service]) {
                 acc[r.service] = { count: 0, cost: 0 }
             }
@@ -246,7 +276,7 @@ export default function StatisticsDashboard({
 
         const allocations: Record<string, Record<string, Array<Date>>> = {}
 
-        orderedRequests.forEach(r => {
+        filteredOrdered.forEach(r => {
             const employeeKey = r.firstName ? `${r.firstName} ${r.employeeName}` : r.employeeName
             if (!allocations[employeeKey]) {
                 allocations[employeeKey] = {}
@@ -294,7 +324,7 @@ export default function StatisticsDashboard({
         })
 
         return anomalies
-    }, [orderedRequests, categoryLabelMap])
+    }, [filteredOrdered, categoryLabelMap])
 
     // ─── Budget by Reason Analysis ───────────────────────────────────────────
     const budgetByReason = useMemo(() => {
@@ -305,7 +335,7 @@ export default function StatisticsDashboard({
             "Autre": 0
         }
 
-        orderedRequests.forEach(r => {
+        filteredOrdered.forEach(r => {
             const lower = (r.reason || "").toLowerCase()
             let norm = "Autre"
             if (lower.includes("usure")) norm = "Usure"
@@ -325,7 +355,7 @@ export default function StatisticsDashboard({
                 percentage: total > 0 ? Math.round((value / total) * 100) : 0
             }))
             .sort((a, b) => b.value - a.value)
-    }, [orderedRequests])
+    }, [filteredOrdered])
 
     const timelineData = Array.from({ length: 30 }, (_, i) => {
         const date = new Date()
@@ -465,6 +495,90 @@ export default function StatisticsDashboard({
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Confiance IA : {aiPrediction.confidence}%</p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* ─── Month Navigation ─────────────────────────────────────── */}
+            <div className="flex items-center justify-between bg-white rounded-[32px] shadow-[0_2px_24px_rgba(0,0,0,0.04)] p-4 border border-slate-100">
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => navigateMonth(-1)}
+                        className="w-10 h-10 rounded-full bg-slate-100 hover:bg-brand hover:text-white text-slate-600 flex items-center justify-center transition-all duration-200 active:scale-95"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <div className="px-6 py-2 min-w-[200px] text-center">
+                        <p className="text-lg font-black text-slate-900 tracking-tight">
+                            {selectedMonth ? getMonthLabel(selectedMonth) : 'Toutes les données'}
+                        </p>
+                        {selectedMonth && (
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                {isCurrentMonth(selectedMonth) ? 'Mois en cours' : 'Mois sélectionné'}
+                            </p>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => navigateMonth(1)}
+                        disabled={selectedMonth && isCurrentMonth(selectedMonth) || false}
+                        className="w-10 h-10 rounded-full bg-slate-100 hover:bg-brand hover:text-white text-slate-600 flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                </div>
+                <div className="flex items-center gap-2">
+                    {selectedMonth && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-full text-xs font-black text-slate-500 hover:text-brand"
+                            onClick={() => setSelectedMonth(null)}
+                        >
+                            Vue globale
+                        </Button>
+                    )}
+                    {!selectedMonth && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-full text-xs font-black bg-brand/5 text-brand hover:bg-brand/10"
+                            onClick={() => setSelectedMonth(new Date())}
+                        >
+                            Mois en cours
+                        </Button>
+                    )}
+                    {selectedMonth && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-full bg-brand text-white hover:bg-brand/90 text-xs font-black flex items-center gap-1.5"
+                            onClick={() => {
+                                const consumed = filteredOrdered
+                                const headers = ["Date", "Collaborateur", "Service", "Equipement", "Taille", "Prix unitaire", "Quantité", "Motif", "Validateur"]
+                                const rows: string[][] = []
+                                consumed.forEach(r => {
+                                    r.items.forEach(item => {
+                                        rows.push([
+                                            new Date(r.createdAt).toLocaleDateString("fr-FR"),
+                                            r.employeeName,
+                                            r.service,
+                                            categoryLabelMap[item.category] || item.category,
+                                            item.size,
+                                            `${item.snapshottedPrice || 0} €`,
+                                            String(item.quantity || 1),
+                                            r.reason || "",
+                                            r.validatedBy || ""
+                                        ])
+                                    })
+                                })
+                                const csvContent = [headers.join(";"), ...rows.map(row => row.join(";"))].join("\n")
+                                const monthStr = selectedMonth.toLocaleDateString('fr-FR', { month: '2-digit', year: 'numeric' }).replace('/', '-')
+                                downloadCSV(csvContent, `budget-epi-${monthStr}.csv`)
+                            }}
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                            Exporter {getMonthLabel(selectedMonth)} (CSV)
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -822,6 +936,79 @@ export default function StatisticsDashboard({
                     </div>
                 </CardContent>
             </Card>
+
+            {/* ─── Stock Forecast Table ─────────────────────────────────── */}
+            {stock && stock.length > 0 && (
+                <Card className="rounded-[40px] border-none shadow-[0_2px_24px_rgba(0,0,0,0.04)] bg-white overflow-hidden">
+                    <CardHeader className="p-8 pb-0">
+                        <div className="space-y-1">
+                            <CardTitle className="text-xl font-black tracking-tight text-slate-900 flex items-center gap-2">
+                                <Clock className="w-5 h-5 text-brand" /> Prévision de Stock
+                            </CardTitle>
+                            <CardDescription className="text-slate-400 font-medium">Consommation moyenne sur 90 jours et estimation des jours restants</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-8">
+                        <div className="space-y-3">
+                            {(() => {
+                                const ninetyDaysAgo = new Date();
+                                ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                                const recentOrdered = orderedRequests.filter(r => new Date(r.createdAt) >= ninetyDaysAgo);
+                                
+                                const catConsumption: Record<string, number> = {};
+                                recentOrdered.forEach(r => {
+                                    r.items.forEach(item => {
+                                        catConsumption[item.category] = (catConsumption[item.category] || 0) + (item.quantity || 1);
+                                    });
+                                });
+
+                                return (stock || []).map((item: any, i: number) => {
+                                    const totalStock = Object.values(item.stock as Record<string, number>).reduce((a: number, b: number) => a + b, 0);
+                                    const consumed = catConsumption[item.category] || 0;
+                                    const dailyRate = consumed / 90;
+                                    const daysRemaining = dailyRate > 0 ? Math.round(totalStock / dailyRate) : -1;
+                                    const monthlyRate = Math.round(dailyRate * 30 * 10) / 10;
+
+                                    const statusEmoji = daysRemaining === -1 ? '⏸️' : daysRemaining < 30 ? '🔴' : daysRemaining < 60 ? '🟡' : '🟢';
+                                    const statusBg = daysRemaining === -1 ? 'bg-slate-50' : daysRemaining < 30 ? 'bg-red-50/50 border-red-100' : daysRemaining < 60 ? 'bg-amber-50/50 border-amber-100' : 'bg-emerald-50/50 border-emerald-100';
+                                    const progressWidth = daysRemaining === -1 ? 100 : Math.min(100, Math.round((daysRemaining / 120) * 100));
+                                    const progressColor = daysRemaining === -1 ? 'bg-slate-200' : daysRemaining < 30 ? 'bg-red-500' : daysRemaining < 60 ? 'bg-amber-500' : 'bg-emerald-500';
+
+                                    return (
+                                        <div key={i} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all hover:shadow-sm ${statusBg}`}>
+                                            <div className="text-2xl w-8 text-center">{statusEmoji}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <p className="text-sm font-black text-slate-900 truncate">{item.label || item.category}</p>
+                                                    <div className="flex items-center gap-3 text-right flex-shrink-0 ml-4">
+                                                        <div>
+                                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Stock</p>
+                                                            <p className="text-sm font-black text-slate-800">{totalStock}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Conso/mois</p>
+                                                            <p className="text-sm font-black text-slate-800">{monthlyRate > 0 ? monthlyRate : '—'}</p>
+                                                        </div>
+                                                        <div className="min-w-[70px]">
+                                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Jours</p>
+                                                            <p className="text-sm font-black text-slate-800">
+                                                                {daysRemaining === -1 ? '∞' : `~${daysRemaining}j`}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                    <div className={`h-full rounded-full transition-all duration-700 ${progressColor}`} style={{ width: `${progressWidth}%` }} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     )
 }

@@ -1,0 +1,654 @@
+{
+  "nodes": [
+    {
+      "id": "app_actions_createrequests",
+      "label": "createRequests",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_actions_createrequest",
+      "label": "createRequest",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L82",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_actions_validaterequest",
+      "label": "validateRequest",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_actions_rejectrequest",
+      "label": "rejectRequest",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L192",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_actions_updatestock",
+      "label": "updateStock",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L223",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_actions_updateskumetadata",
+      "label": "updateSkuMetadata",
+      "file_type": "code",
+      "source_file": "app/actions.ts",
+      "source_location": "L265",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_admin_layout_adminlayout",
+      "label": "AdminLayout",
+      "file_type": "code",
+      "source_file": "app/admin/layout.tsx",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_api_auth_nextauth_route_get_post",
+      "label": "{ GET, POST }",
+      "file_type": "code",
+      "source_file": "app/api/auth/[...nextauth]/route.ts",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_layout_rootlayout",
+      "label": "RootLayout",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_lib_actions_authenticate",
+      "label": "authenticate",
+      "file_type": "code",
+      "source_file": "app/lib/actions.ts",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_lib_actions_handlesignout",
+      "label": "handleSignOut",
+      "file_type": "code",
+      "source_file": "app/lib/actions.ts",
+      "source_location": "L25",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_lib_offline_queue_offlineaction",
+      "label": "OfflineAction",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_lib_offline_queue_addofflineaction",
+      "label": "addOfflineAction",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_lib_offline_queue_getofflineactions",
+      "label": "getOfflineActions",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L65",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_lib_offline_queue_removeofflineaction",
+      "label": "removeOfflineAction",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L84",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_lib_offline_queue_getofflinequeuecount",
+      "label": "getOfflineQueueCount",
+      "file_type": "code",
+      "source_file": "app/lib/offline-queue.ts",
+      "source_location": "L99",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_login_page_loginpage",
+      "label": "LoginPage",
+      "file_type": "code",
+      "source_file": "app/login/page.tsx",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_page_homepage",
+      "label": "HomePage",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "app_unauthorized_page_unauthorizedpage",
+      "label": "UnauthorizedPage",
+      "file_type": "code",
+      "source_file": "app/unauthorized/page.tsx",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "components_employee_dashboard_employeedashboard",
+      "label": "EmployeeDashboard",
+      "file_type": "code",
+      "source_file": "components/employee-dashboard.tsx",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "components_navbar_navbar",
+      "label": "Navbar",
+      "file_type": "code",
+      "source_file": "components/navbar.tsx",
+      "source_location": "L7",
+      "_origin": "ast"
+    },
+    {
+      "id": "components_statistics_dashboard_bak_statisticsdashboard",
+      "label": "StatisticsDashboard",
+      "file_type": "code",
+      "source_file": "components/statistics-dashboard.bak.tsx",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "components_ui_button_buttonprops",
+      "label": "ButtonProps",
+      "file_type": "code",
+      "source_file": "components/ui/button.tsx",
+      "source_location": "L32",
+      "_origin": "ast"
+    },
+    {
+      "id": "components_ui_input_inputprops",
+      "label": "InputProps",
+      "file_type": "code",
+      "source_file": "components/ui/input.tsx",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_offline_db_offlinedb",
+      "label": "OfflineDB",
+      "file_type": "code",
+      "source_file": "lib/offline-db.ts",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_utils_cn",
+      "label": "cn",
+      "file_type": "code",
+      "source_file": "lib/utils.ts",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "lib_utils_sortsizes",
+      "label": "sortSizes",
+      "file_type": "code",
+      "source_file": "lib/utils.ts",
+      "source_location": "L8",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "app_api_auth_nextauth_route",
+      "target": "auth",
+      "relation": "re_exports",
+      "context": "export",
+      "confidence": "EXTRACTED",
+      "source_file": "app/api/auth/[...nextauth]/route.ts",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "app_layout",
+      "target": "components_navbar_navbar",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "app_login_page",
+      "target": "app_lib_actions_authenticate",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/login/page.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "components_employee_wizard",
+      "target": "app_actions_createrequests",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/employee-wizard.tsx",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "components_employee_wizard",
+      "target": "lib_utils_sortsizes",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/employee-wizard.tsx",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_actions_validaterequest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_actions_rejectrequest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_actions_updatestock",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_actions_updateskumetadata",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_lib_actions_handlesignout",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "lib_utils_sortsizes",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_lib_offline_queue_addofflineaction",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_lib_offline_queue_getofflineactions",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_lib_offline_queue_removeofflineaction",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_lib_offline_queue_getofflinequeuecount",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "components_manager_dashboard",
+      "target": "app_lib_offline_queue_offlineaction",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "components_navbar_client",
+      "target": "app_lib_actions_handlesignout",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/navbar-client.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "components_navbar",
+      "target": "app_lib_actions_handlesignout",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/navbar.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_alert_dialog",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/alert-dialog.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_avatar",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/avatar.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_badge",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/badge.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_button",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/button.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_card",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/card.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_input",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/input.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_label",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/label.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_pagination",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/pagination.tsx",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_pagination",
+      "target": "components_ui_button_buttonprops",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/pagination.tsx",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_select",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/select.tsx",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_skeleton",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/skeleton.tsx",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_table",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/table.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_tabs",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/tabs.tsx",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "components_ui_toast",
+      "target": "lib_utils_cn",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/toast.tsx",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_employee_wizard_syncofflinerequests",
+      "target": "app_actions_createrequests",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/employee-wizard.tsx",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_employee_wizard_handlesubmit",
+      "target": "app_actions_createrequests",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/employee-wizard.tsx",
+      "source_location": "L170",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_handlesignatureconfirm",
+      "target": "app_lib_offline_queue_addofflineaction",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L247",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_handlesignatureconfirm",
+      "target": "app_actions_validaterequest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L281",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_syncofflineactions",
+      "target": "app_lib_offline_queue_getofflineactions",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_syncofflineactions",
+      "target": "app_actions_validaterequest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L321",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_syncofflineactions",
+      "target": "app_lib_offline_queue_removeofflineaction",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L323",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_syncofflineactions",
+      "target": "app_lib_offline_queue_getofflinequeuecount",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L340",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_handlereject",
+      "target": "app_actions_rejectrequest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L391",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_handleadjuststock",
+      "target": "app_actions_updatestock",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L419",
+      "weight": 1.0
+    },
+    {
+      "source": "c_users_fphil_gemini_antigravity_scratch_epi_manager_components_manager_dashboard_handleskumetadataupdate",
+      "target": "app_actions_updateskumetadata",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "components/manager-dashboard.tsx",
+      "source_location": "L442",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
