@@ -9,7 +9,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { validateRequest, rejectRequest, updateStock, updateSkuMetadata } from "@/app/actions"
+import { validateRequest, rejectRequest, updateStock, updateSkuMetadata, updateMinThreshold } from "@/app/actions"
 import { handleSignOut } from "@/app/lib/actions"
 import { sortSizes } from "@/lib/utils"
 import { 
@@ -178,17 +178,25 @@ interface StockItemCardProps {
     showStockImages: boolean
     handleAdjustStock: (itemId: string, size: string, delta: number) => Promise<void>
     handleSkuMetadataUpdate: (itemId: string, size: string, field: 'ref' | 'location', value: string) => Promise<void>
+    handleUpdateMinThreshold: (itemId: string, threshold: number) => Promise<void>
 }
 
 function StockItemCard({
     item,
     showStockImages,
     handleAdjustStock,
-    handleSkuMetadataUpdate
+    handleSkuMetadataUpdate,
+    handleUpdateMinThreshold
 }: StockItemCardProps) {
     const [selectedSize, setSelectedSize] = useState<string | null>(null)
     const [editingSkuField, setEditingSkuField] = useState<'ref' | 'location' | null>(null)
     const [editMetadataValue, setEditMetadataValue] = useState("")
+    const [editingThreshold, setEditingThreshold] = useState(false)
+    const [editThresholdValue, setEditThresholdValue] = useState(item.minThreshold)
+
+    useEffect(() => {
+        setEditThresholdValue(item.minThreshold)
+    }, [item.minThreshold])
 
     const totalQuantity = Object.values(item.stock).reduce((a, b) => a + b, 0)
     const hasLowStock = Object.entries(item.stock).some(([size, qty]) => qty < item.minThreshold)
@@ -361,6 +369,38 @@ function StockItemCard({
                                 </span>
                             )}
                         </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Seuil Alerte</span>
+                            {editingThreshold ? (
+                                <Input
+                                    autoFocus
+                                    type="number"
+                                    className="h-6 text-xs font-black text-[#135bec] text-right bg-white border-brand w-24 p-1"
+                                    value={editThresholdValue}
+                                    onChange={(e) => setEditThresholdValue(parseInt(e.target.value) || 0)}
+                                    onBlur={() => {
+                                        handleUpdateMinThreshold(item.id, editThresholdValue)
+                                        setEditingThreshold(false)
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleUpdateMinThreshold(item.id, editThresholdValue)
+                                            setEditingThreshold(false)
+                                        }
+                                    }}
+                                />
+                            ) : (
+                                <span 
+                                    className="text-xs font-black text-[#135bec] cursor-pointer hover:underline"
+                                    onClick={() => {
+                                        setEditingThreshold(true)
+                                        setEditThresholdValue(item.minThreshold)
+                                    }}
+                                >
+                                    {item.minThreshold} articles
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Action Control Bar */}
@@ -413,7 +453,42 @@ function StockItemCard({
                             <h3 className="text-xl font-black text-slate-800 leading-tight tracking-tight">
                                 {item.label}
                             </h3>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.category}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.category}</span>
+                                <span className="text-slate-300">•</span>
+                                {editingThreshold ? (
+                                    <Input
+                                        type="number"
+                                        autoFocus
+                                        className="h-5 text-[10px] font-black text-[#135bec] bg-white border-brand w-12 p-0.5 text-center inline-block"
+                                        value={editThresholdValue}
+                                        onChange={(e) => setEditThresholdValue(parseInt(e.target.value) || 0)}
+                                        onBlur={() => {
+                                            handleUpdateMinThreshold(item.id, editThresholdValue)
+                                            setEditingThreshold(false)
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleUpdateMinThreshold(item.id, editThresholdValue)
+                                                setEditingThreshold(false)
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <button 
+                                        className="text-[10px] font-bold text-slate-500 hover:text-brand cursor-pointer flex items-center gap-0.5 border-none bg-transparent p-0"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEditingThreshold(true)
+                                            setEditThresholdValue(item.minThreshold)
+                                        }}
+                                        title="Modifier le seuil d'alerte"
+                                    >
+                                        Seuil: {item.minThreshold}
+                                        <PenLine className="w-2.5 h-2.5 inline" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         {hasLowStock && (
                             <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse">
@@ -876,6 +951,30 @@ export default function ManagerDashboard({
             return item
         }))
         setEditingSku(null)
+    }
+
+    const handleUpdateMinThreshold = async (itemId: string, threshold: number) => {
+        setStock(prev => prev.map(item => {
+            if (item.id === itemId) {
+                updateMinThreshold(itemId, threshold).then(res => {
+                    if (!res.success) {
+                        toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: res.error || "Impossible de mettre à jour le seuil d'alerte."
+                        })
+                    } else {
+                        toast({
+                            title: "✅ Seuil mis à jour",
+                            description: `Le seuil d'alerte pour ${item.label} a été défini à ${threshold}.`,
+                            className: "bg-emerald-50 border-emerald-200 text-emerald-800",
+                        })
+                    }
+                })
+                return { ...item, minThreshold: threshold }
+            }
+            return item
+        }))
     }
 
     const exportRequestsToCSV = () => {
@@ -1417,6 +1516,7 @@ export default function ManagerDashboard({
                                 showStockImages={showStockImages}
                                 handleAdjustStock={handleAdjustStock}
                                 handleSkuMetadataUpdate={handleSkuMetadataUpdate}
+                                handleUpdateMinThreshold={handleUpdateMinThreshold}
                             />
                         ))}
                     </div>

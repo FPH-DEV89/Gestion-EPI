@@ -145,12 +145,25 @@ export async function validateRequest(requestId: string, signatureData?: string)
             for (const item of request.items) {
                 const stockItem = stockMap.get(item.category)!;
                 const stock = (stockItem.stock as Record<string, number>) || {};
-                const newStock = { ...stock, [item.size]: (stock[item.size] || 0) - 1 };
+                const oldQuantity = stock[item.size] || 0;
+                const newQuantity = Math.max(0, oldQuantity - 1);
+                const newStock = { ...stock, [item.size]: newQuantity };
 
                 await tx.stockItem.update({
                     where: { id: stockItem.id },
                     data: { stock: newStock }
                 });
+
+                // Si le stock descend sous le seuil d'alerte
+                if (newQuantity < stockItem.minThreshold && oldQuantity >= stockItem.minThreshold) {
+                    sendTeamsLowStockAlert(
+                        stockItem.label || stockItem.category,
+                        stockItem.category,
+                        item.size,
+                        newQuantity,
+                        stockItem.minThreshold
+                    ).catch(err => console.error("Failed to notify Teams on low stock:", err));
+                }
             }
 
             await tx.request.update({
@@ -250,6 +263,17 @@ export async function updateStock(categoryId: string, size: string, quantity: nu
                 newQuantity: quantity
             });
 
+            // Si le stock descend sous le seuil d'alerte
+            if (quantity < stockItem.minThreshold && oldQuantity >= stockItem.minThreshold) {
+                sendTeamsLowStockAlert(
+                    stockItem.label || stockItem.category,
+                    stockItem.category,
+                    size,
+                    quantity,
+                    stockItem.minThreshold
+                ).catch(err => console.error("Failed to notify Teams on low stock:", err));
+            }
+
             return true;
         });
 
@@ -309,6 +333,102 @@ export async function updateSkuMetadata(categoryId: string, size: string, ref: s
     } catch (error) {
         console.error("Failed to update SKU metadata:", error);
         return { success: false, error: "Erreur lors de la mise à jour des métadonnées" };
+    }
+}
+
+export async function updateMinThreshold(categoryId: string, threshold: number) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id || (session.user as any).role !== "ADMIN") {
+            return { success: false, error: "Non autorisé. Accès administrateur requis." };
+        }
+
+        const success = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const stockItem = await tx.stockItem.findUnique({
+                where: { id: categoryId },
+            });
+
+            if (!stockItem) return null;
+
+            const oldThreshold = stockItem.minThreshold;
+
+            await tx.stockItem.update({
+                where: { id: categoryId },
+                data: { minThreshold: threshold },
+            });
+
+            await recordAuditLog(tx, session!.user!.id as string, "UPDATE_THRESHOLD", {
+                category: stockItem.category,
+                oldThreshold,
+                newThreshold: threshold
+            });
+
+            // Si le nouveau seuil rend le stock critique pour certaines tailles qui ne l'étaient pas
+            const stock = (stockItem.stock as Record<string, number>) || {};
+            for (const [size, qty] of Object.entries(stock)) {
+                if (qty < threshold && qty >= oldThreshold) {
+                    sendTeamsLowStockAlert(
+                        stockItem.label || stockItem.category,
+                        stockItem.category,
+                        size,
+                        qty,
+                        threshold
+                    ).catch(err => console.error("Failed to notify Teams on low stock:", err));
+                }
+            }
+
+            return true;
+        });
+
+        if (!success) return { success: false, error: "Équipement introuvable" };
+
+        revalidatePath("/");
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update min threshold:", error);
+        return { success: false, error: "Erreur lors de la mise à jour du seuil" };
+    }
+}
+
+async function sendTeamsLowStockAlert(itemLabel: string, category: string, size: string, currentStock: number, threshold: number) {
+    try {
+        const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
+        if (!webhookUrl) {
+            console.log("Teams Webhook URL is not configured. Skipping low stock notification.");
+            return;
+        }
+
+        const cardPayload = {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "themeColor": "D70000",
+            "summary": "Alerte Stock Critique d'EPI",
+            "sections": [{
+                "activityTitle": `⚠️ Alerte : Stock Critique pour ${itemLabel} !`,
+                "activitySubtitle": `Le stock pour cet équipement a atteint son seuil d'alerte.`,
+                "facts": [
+                    { "name": "Équipement", "value": itemLabel },
+                    { "name": "Catégorie", "value": category },
+                    { "name": "Taille", "value": size },
+                    { "name": "Stock Actuel", "value": `${currentStock} article(s)` },
+                    { "name": "Seuil d'Alerte", "value": `${threshold} article(s)` }
+                ],
+                "markdown": true
+            }]
+        };
+
+        const response = await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cardPayload)
+        });
+
+        if (!response.ok) {
+            console.error(`Teams Webhook failed with status ${response.status}: ${await response.text()}`);
+        }
+    } catch (error) {
+        console.error("Erreur lors de l'envoi de la notification de stock bas Teams :", error);
     }
 }
 
