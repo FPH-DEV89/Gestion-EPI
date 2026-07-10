@@ -605,7 +605,7 @@ export default function ManagerDashboard({
     const [stock, setStock] = useState(initialStock)
     const [searchTerm, setSearchTerm] = useState("")
     const [filterCategory, setFilterCategory] = useState("ALL")
-    const [showStockImages, setShowStockImages] = useState(true)
+    const [showStockImages, setShowStockImages] = useState(false)
 
     const userInitials = useMemo(() => {
         if (userName && userName.toLowerCase() !== "inconnu") {
