@@ -192,7 +192,7 @@ function StockItemCard({
     const [editingSkuField, setEditingSkuField] = useState<'ref' | 'location' | null>(null)
     const [editMetadataValue, setEditMetadataValue] = useState("")
     const [editingThreshold, setEditingThreshold] = useState(false)
-    const [editThresholdValue, setEditThresholdValue] = useState(item.minThreshold)
+    const [editThresholdValue, setEditThresholdValue] = useState<number | "">(item.minThreshold)
 
     useEffect(() => {
         setEditThresholdValue(item.minThreshold)
@@ -377,14 +377,19 @@ function StockItemCard({
                                     type="number"
                                     className="h-6 text-xs font-black text-[#135bec] text-right bg-white border-brand w-24 p-1"
                                     value={editThresholdValue}
-                                    onChange={(e) => setEditThresholdValue(parseInt(e.target.value) || 0)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setEditThresholdValue(val === "" ? "" : (parseInt(val) || 0));
+                                    }}
                                     onBlur={() => {
-                                        handleUpdateMinThreshold(item.id, editThresholdValue)
+                                        const finalVal = editThresholdValue === "" ? 0 : editThresholdValue;
+                                        handleUpdateMinThreshold(item.id, finalVal)
                                         setEditingThreshold(false)
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
-                                            handleUpdateMinThreshold(item.id, editThresholdValue)
+                                            const finalVal = editThresholdValue === "" ? 0 : editThresholdValue;
+                                            handleUpdateMinThreshold(item.id, finalVal)
                                             setEditingThreshold(false)
                                         }
                                     }}
@@ -462,14 +467,19 @@ function StockItemCard({
                                         autoFocus
                                         className="h-5 text-[10px] font-black text-[#135bec] bg-white border-brand w-12 p-0.5 text-center inline-block"
                                         value={editThresholdValue}
-                                        onChange={(e) => setEditThresholdValue(parseInt(e.target.value) || 0)}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setEditThresholdValue(val === "" ? "" : (parseInt(val) || 0));
+                                        }}
                                         onBlur={() => {
-                                            handleUpdateMinThreshold(item.id, editThresholdValue)
+                                            const finalVal = editThresholdValue === "" ? 0 : editThresholdValue;
+                                            handleUpdateMinThreshold(item.id, finalVal)
                                             setEditingThreshold(false)
                                         }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
-                                                handleUpdateMinThreshold(item.id, editThresholdValue)
+                                                const finalVal = editThresholdValue === "" ? 0 : editThresholdValue;
+                                                handleUpdateMinThreshold(item.id, finalVal)
                                                 setEditingThreshold(false)
                                             }
                                         }}
@@ -595,7 +605,7 @@ export default function ManagerDashboard({
     const [stock, setStock] = useState(initialStock)
     const [searchTerm, setSearchTerm] = useState("")
     const [filterCategory, setFilterCategory] = useState("ALL")
-    const [showStockImages, setShowStockImages] = useState(false)
+    const [showStockImages, setShowStockImages] = useState(true)
 
     const userInitials = useMemo(() => {
         if (userName && userName.toLowerCase() !== "inconnu") {
@@ -1465,15 +1475,6 @@ export default function ManagerDashboard({
                                 <CardDescription>Consultez et modifiez les quantités en stock.</CardDescription>
                             </div>
                             <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className={`transition-all duration-300 rounded-xl ${showStockImages ? 'bg-blue-50 text-[#135bec] border-blue-200 hover:bg-blue-100' : 'text-slate-500 border-slate-200 hover:bg-slate-50'}`}
-                                    onClick={() => setShowStockImages(!showStockImages)}
-                                >
-                                    {showStockImages ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
-                                    {showStockImages ? "Photos" : "Sans Photos"}
-                                </Button>
                                 <Button
                                     variant="outline"
                                     size="sm"
