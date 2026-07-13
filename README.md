@@ -33,7 +33,7 @@ Pour en savoir plus sur l'utilisation et l'administration quotidienne de l'appli
 *   **Framework** : Next.js 16 (App Router, React 19)
 *   **Langage** : TypeScript (mode strict)
 *   **Style** : Tailwind CSS v4
-*   **Base de Données** : PostgreSQL (Vercel DB) avec Prisma ORM
+*   **Base de Données** : PostgreSQL avec Prisma ORM
 *   **Sécurité** : NextAuth.js v5 + Keycloak (OIDC) / Local database accounts
 *   **Tests** : Vitest (Unitaires) & Playwright (E2E, configuré sur le port `3005`)
 *   **CI/CD** : GitHub Actions
@@ -92,19 +92,50 @@ npx playwright test
 
 ---
 
-## 🔐 Accès Administrateur par défaut
+## 🔐 Gestion des Accès
 
 L'authentification s'effectue via la base de données locale (ou Keycloak si configuré).
 
-### Compte Super Administrateur de Test
-*   **Email** : `admin@example.com`
-*   **Mot de passe** : `REDACTED_PASSWORD`
-
-### Création manuelle d'un administrateur
-Pour ajouter un compte administrateur local en base de données :
+### Création d'un compte administrateur
+Les identifiants sont lus depuis les variables d'environnement :
 ```bash
-node scripts/create-admin.js
+ADMIN_EMAIL="votre-email@entreprise.com" ADMIN_PASSWORD="votre_mot_de_passe" ADMIN_NAME="Prénom Nom" node scripts/create-admin.js
 ```
+
+### Création des comptes utilisateurs
+Copiez le fichier d'exemple et adaptez-le avec vos utilisateurs :
+```bash
+cp scripts/users.example.json scripts/users.json
+# Éditez scripts/users.json avec vos utilisateurs
+node scripts/create-org-users.js
+```
+
+> ⚠️ **Ne commitez jamais `scripts/users.json`** : il contient des données personnelles et est exclu via `.gitignore`.
+
+---
+
+## 🌐 Déploiement Multi-Plateforme
+
+L'application est conçue pour fonctionner sur n'importe quelle plateforme. Le récap hebdomadaire Teams (`/api/weekly-recap`) doit être déclenché par un scheduler externe.
+
+### Vercel
+Déjà configuré via `vercel.json`. Aucune action requise.
+
+### AWS (EventBridge + Lambda)
+```bash
+# Créer une règle EventBridge pour chaque lundi à 8h
+aws events put-rule --name epi-weekly-recap --schedule-expression "cron(0 8 ? * MON *)"
+# Configurer la cible HTTP vers votre endpoint
+```
+
+### Docker / VPS (crontab)
+```bash
+# Ajouter au crontab du serveur
+0 8 * * 1 curl -s -H "Authorization: Bearer $CRON_SECRET" https://votre-domaine.com/api/weekly-recap
+```
+
+### GitHub Actions
+Un workflow schedulé peut aussi déclencher le récap (voir `.github/workflows/`).
 
 ---
 

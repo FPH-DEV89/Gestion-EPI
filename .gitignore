@@ -42,3 +42,7 @@ src/
 # playwright
 /playwright-report/
 /test-results/
+
+# sensitive data
+scripts/users.json
+db_export_csv/

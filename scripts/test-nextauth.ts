@@ -7,8 +7,9 @@ async function testSignIn() {
 
         // Construct the FormData that next-auth expects
         const formData = new FormData()
-        formData.append("email", "admin@example.com")
-        formData.append("password", "REDACTED_PASSWORD")
+        // Identifiants lus depuis les variables d'environnement
+        formData.append("email", process.env.TEST_EMAIL || "admin@example.com")
+        formData.append("password", process.env.TEST_PASSWORD || "password")
 
         const result = await signIn('credentials', Object.fromEntries(formData))
         console.log("SignIn Result:", result)

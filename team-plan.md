@@ -29,7 +29,7 @@ L'objectif est de transformer Epi Manager d'un simple outil de gestion interne e
 - [ ] Ajout d'une table `PushSubscription` dans le schéma Prisma pour la gestion des notifications.
 
 ### 👨‍💻 Chef (Head of Engineering)
-- [x] Profil d'admin super-user créé (`admin@example.com`).
+- [x] Profil d'admin super-user créé (via `scripts/create-admin.js`).
 - [x] Audit global complété.
 - [ ] Revue globale du code avant les tests locaux exclusifs. Pas de déploiement en prod sans validation stricte.
 - [x] Validation de l'ambition PWA avec le client (Offline Sync, Push validés).

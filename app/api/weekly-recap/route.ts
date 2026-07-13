@@ -5,11 +5,19 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
     try {
-        // Verify cron secret (optional security)
-        const authHeader = request.headers.get('authorization');
+        // Authentification flexible : supporte Bearer token, x-api-key, ou Vercel cron
+        // Compatible avec tous les schedulers (Vercel, AWS EventBridge, crontab, GitHub Actions)
         const cronSecret = process.env.CRON_SECRET;
-        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (cronSecret) {
+            const authHeader = request.headers.get('authorization');
+            const apiKey = request.headers.get('x-api-key');
+            const isAuthorized =
+                authHeader === `Bearer ${cronSecret}` ||
+                apiKey === cronSecret;
+
+            if (!isAuthorized) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            }
         }
 
         const webhookUrl = process.env.TEAMS_WEBHOOK_URL;

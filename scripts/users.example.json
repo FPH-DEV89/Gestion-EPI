@@ -1,0 +1,5 @@
+[
+  { "email": "prenom.nom@entreprise.com", "name": "Prénom Nom", "role": "ADMIN" },
+  { "email": "utilisateur1@entreprise.com", "name": "Utilisateur Demo", "role": "USER" },
+  { "email": "utilisateur2@entreprise.com", "name": "Autre Utilisateur", "role": "USER" }
+]

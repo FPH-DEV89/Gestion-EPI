@@ -4,8 +4,9 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-    const email = 'admin@example.com'
-    const password = 'REDACTED_PASSWORD'
+    // Identifiants lus depuis les variables d'environnement
+    const email = process.env.TEST_EMAIL || 'admin@example.com'
+    const password = process.env.TEST_PASSWORD || 'password'
 
     const user = await prisma.user.findUnique({
         where: { email }

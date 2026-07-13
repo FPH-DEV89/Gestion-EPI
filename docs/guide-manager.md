@@ -13,7 +13,7 @@ Le tableau de bord d'administration est accessible via l'URL `/admin` (ou `/stat
 
 ### Personnalisation de l'Avatar
 Une fois connecté, le système identifie automatiquement le gestionnaire grâce à son email ou nom NextAuth :
-- L'avatar situé en haut à droite du tableau de bord affiche vos **initiales dynamiques** (par exemple, **FP** pour `admin@example.com`).
+- L'avatar situé en haut à droite du tableau de bord affiche vos **initiales dynamiques** (par exemple, **FP** pour `admin@entreprise.com`).
 - Un survol avec le curseur (tooltip) permet d'afficher votre nom complet ou votre email actuellement connecté.
 
 ---

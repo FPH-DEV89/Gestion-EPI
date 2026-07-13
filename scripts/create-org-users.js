@@ -4,18 +4,19 @@ const bcrypt = require('bcryptjs')
 
 const prisma = new PrismaClient()
 
-const usersToCreate = [
-  { email: 'user1@example.com', name: 'Typhaine Mialon', role: 'USER' },
-  { email: 'user2@example.com', name: 'Jocelyne Zunino', role: 'USER' },
-  { email: 'user3@example.com', name: 'Rémi Mercier (accent)', role: 'USER' },
-  { email: 'user4@example.com', name: 'Remi Mercier', role: 'USER' },
-  { email: 'user5@example.com', name: 'Pierre Sene', role: 'ADMIN' },
-  { email: 'user6@example.com', name: 'Salim Aarab', role: 'USER' },
-  { email: 'user7@example.com', name: 'Christophe Fourcade', role: 'ADMIN' },
-  { email: 'user8@example.com', name: 'Adrien Faye', role: 'ADMIN' }
-]
+// Chargement de la liste des utilisateurs depuis un fichier externe
+const fs = require('fs')
+const path = require('path')
 
-const DEFAULT_PASSWORD = 'REDACTED_PASSWORD'
+const usersFilePath = path.join(__dirname, 'users.json')
+if (!fs.existsSync(usersFilePath)) {
+  console.error('❌ Fichier scripts/users.json introuvable.')
+  console.error('   Copiez scripts/users.example.json vers scripts/users.json et adaptez-le.')
+  process.exit(1)
+}
+const usersToCreate = JSON.parse(fs.readFileSync(usersFilePath, 'utf-8'))
+
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'ChangeMe2026!'
 
 async function main() {
   console.log('🚀 Création/Mise à jour des comptes utilisateurs avec Adrien Faye...')

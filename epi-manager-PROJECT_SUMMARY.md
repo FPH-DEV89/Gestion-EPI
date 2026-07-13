@@ -32,7 +32,7 @@ Ce document sert de **base de connaissances ultra-légère** pour les assistants
 *   **Export CSV Financier étendu :** Intègre désormais le prix unitaire bloqué, le motif de demande normalisé et le manager validateur.
 
 ### 👤 D. Personnalisation de l'Avatar Admin
-*   **Initiales Dynamiques ([manager-dashboard.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/manager-dashboard.tsx)) :** L'avatar en haut à droite affiche à présent de manière dynamique les initiales du gestionnaire connecté (ex: **FP** pour `admin@example.com`) grâce à un parseur intelligent du nom ou de l'email NextAuth, avec tooltip de survol.
+*   **Initiales Dynamiques ([manager-dashboard.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/manager-dashboard.tsx)) :** L'avatar en haut à droite affiche à présent de manière dynamique les initiales du gestionnaire connecté (ex: **FP** pour `admin@entreprise.com`) grâce à un parseur intelligent du nom ou de l'email NextAuth, avec tooltip de survol.
 
 ### ✍️ E. Signature Électronique Tactile de Remise
 *   **Composant signature ([components/signature-pad.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/signature-pad.tsx)) :** Pad de dessin HTML5 Canvas avec support tactile fluide pour signer la remise d'EPI sur mobile, tablette ou desktop.
