@@ -254,7 +254,7 @@ function StockItemCard({
                             </div>
                         </div>
                         {isLow && (
-                            <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse">
+                            <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse whitespace-nowrap flex-shrink-0">
                                 <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
                                 Critique
                             </Badge>
@@ -511,7 +511,7 @@ function StockItemCard({
                             </div>
                         </div>
                         {hasLowStock && (
-                            <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse">
+                            <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse whitespace-nowrap flex-shrink-0">
                                 <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
                                 Alerte Taille
                             </Badge>
