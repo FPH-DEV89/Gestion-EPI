@@ -236,7 +236,7 @@ function StockItemCard({
                 <div className="p-6">
                     {/* Top Section: Back Button, Title & Status */}
                     <div className="flex justify-between items-start mb-4">
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0 flex-1 mr-2">
                             <button 
                                 onClick={() => {
                                     setSelectedSize(null)
@@ -464,7 +464,7 @@ function StockItemCard({
                 <div>
                     {/* Top Section: Title & Status */}
                     <div className="flex justify-between items-start mb-4">
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0 flex-1 mr-2">
                             <h3 className="text-xl font-black text-slate-800 leading-tight tracking-tight">
                                 {item.label}
                             </h3>
