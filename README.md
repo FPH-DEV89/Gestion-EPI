@@ -116,25 +116,33 @@ node scripts/create-org-users.js
 
 ## 🌐 Déploiement Multi-Plateforme
 
-L'application est conçue pour fonctionner sur n'importe quelle plateforme. Le récap hebdomadaire Teams (`/api/weekly-recap`) doit être déclenché par un scheduler externe.
+L'application est conçue pour fonctionner sur n'importe quelle plateforme. Le récap hebdomadaire Teams (`/api/weekly-recap`) doit être déclenché par un scheduler.
 
 ### Vercel
 Déjà configuré via `vercel.json`. Aucune action requise.
 
-### AWS (EventBridge + Lambda)
+### Node.js / VPS autonome (scheduler interne, recommandé — sans crontab/AWS/Docker)
+En dehors de Vercel, l'application tourne en Node.js persistant (`npm run start`, `output: 'standalone'`). Le backend peut donc planifier lui-même le récap hebdomadaire : au démarrage du serveur, `instrumentation.ts` enregistre une tâche `node-cron` qui exécute directement la logique du récap (`lib/weekly-recap.ts`), sans appel HTTP ni infrastructure externe.
+
+Aucune configuration supplémentaire n'est requise (il faut juste que `TEAMS_WEBHOOK_URL` soit défini). Planning par défaut : `0 8 * * 1` (chaque lundi 8h, fuseau `Europe/Paris`), surchargeable via `WEEKLY_RECAP_CRON` et `WEEKLY_RECAP_TIMEZONE`. Le fuseau est fixé explicitement dans le code (plutôt que de dépendre du fuseau système du conteneur, souvent UTC) pour garantir un déclenchement à l'heure française quel que soit l'environnement. Pour désactiver ce scheduler interne, définissez `DISABLE_INTERNAL_CRON=true`.
+
+> Sur Vercel, ce scheduler interne est automatiquement désactivé (détection de `process.env.VERCEL`) pour éviter un double envoi avec les crons `vercel.json`.
+
+### AWS (EventBridge + Lambda) — alternative
 ```bash
 # Créer une règle EventBridge pour chaque lundi à 8h
 aws events put-rule --name epi-weekly-recap --schedule-expression "cron(0 8 ? * MON *)"
 # Configurer la cible HTTP vers votre endpoint
 ```
 
-### Docker / VPS (crontab)
+### Docker / VPS (crontab) — alternative
+Si vous préférez garder le déclenchement en dehors du process Node, l'endpoint HTTP reste disponible ; définissez alors `DISABLE_INTERNAL_CRON=true` pour ne pas doubler l'envoi.
 ```bash
 # Ajouter au crontab du serveur
 0 8 * * 1 curl -s -H "Authorization: Bearer $CRON_SECRET" https://votre-domaine.com/api/weekly-recap
 ```
 
-### GitHub Actions
+### GitHub Actions — alternative
 Un workflow schedulé peut aussi déclencher le récap (voir `.github/workflows/`).
 
 ---
