@@ -105,10 +105,10 @@ export async function runWeeklyRecap() {
         "@type": "MessageCard",
         "@context": "http://schema.org/extensions",
         "themeColor": "135bec",
-        "summary": "Récap Hebdomadaire Stock EPI",
+        "summary": "Récap Stock EPI",
         "sections": [
             {
-                "activityTitle": `📊 Récap Hebdomadaire Stock EPI`,
+                "activityTitle": `📊 Récap Stock EPI`,
                 "activitySubtitle": dateStr,
                 "markdown": true
             },

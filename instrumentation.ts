@@ -29,12 +29,13 @@ export async function register() {
     const cron = await import(/* webpackIgnore: true */ 'node-cron');
     const { runWeeklyRecap } = await import('@/lib/weekly-recap');
 
-    // Tous les lundis à 8h, équivalent au "0 8 * * 1" utilisé pour Vercel/AWS/crontab
-    // dans le README. Le fuseau horaire est fixé explicitement (par défaut
-    // Europe/Paris) plutôt que de dépendre du fuseau système du conteneur/serveur
-    // (souvent UTC), pour garantir un déclenchement à 8h heure française quel que
-    // soit l'environnement d'exécution. Surchageable via WEEKLY_RECAP_TIMEZONE.
-    const schedule = process.env.WEEKLY_RECAP_CRON || '0 8 * * 1';
+    // Deux fois par jour, à 10h et 14h, équivalent au "0 10,14 * * *" utilisé
+    // pour Vercel/AWS/crontab dans le README. Le fuseau horaire est fixé
+    // explicitement (par défaut Europe/Paris) plutôt que de dépendre du fuseau
+    // système du conteneur/serveur (souvent UTC), pour garantir un déclenchement
+    // à l'heure française quel que soit l'environnement d'exécution.
+    // Surchageable via WEEKLY_RECAP_TIMEZONE.
+    const schedule = process.env.WEEKLY_RECAP_CRON || '0 10,14 * * *';
     const timezone = process.env.WEEKLY_RECAP_TIMEZONE || 'Europe/Paris';
 
     cron.schedule(schedule, async () => {
