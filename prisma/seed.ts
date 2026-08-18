@@ -1,8 +1,43 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
+  console.log('Seeding admin users...')
+  const hashedPassword = await bcrypt.hash('Stef2026!', 10)
+  
+  await prisma.user.upsert({
+    where: { email: 'florian.thibert@stef.com' },
+    update: {
+      password: hashedPassword,
+      role: 'ADMIN',
+      name: 'Florian Thibert'
+    },
+    create: {
+      email: 'florian.thibert@stef.com',
+      password: hashedPassword,
+      name: 'Florian Thibert',
+      role: 'ADMIN'
+    }
+  })
+
+  const directorPassword = await bcrypt.hash('DemoDirecteur2026!', 10)
+  await prisma.user.upsert({
+    where: { email: 'director@example.com' },
+    update: {
+      password: directorPassword,
+      role: 'ADMIN',
+      name: 'Directeur STEF'
+    },
+    create: {
+      email: 'director@example.com',
+      password: directorPassword,
+      name: 'Directeur STEF',
+      role: 'ADMIN'
+    }
+  })
+
   console.log('Seeding PPE list...')
 
   // Fix typo from previous versions
