@@ -26,6 +26,7 @@ export async function register() {
         return;
     }
 
+    // @ts-expect-error node-cron is loaded dynamically in node environment
     const cron = await import(/* webpackIgnore: true */ 'node-cron');
     const { runWeeklyRecap } = await import('@/lib/weekly-recap');
 
