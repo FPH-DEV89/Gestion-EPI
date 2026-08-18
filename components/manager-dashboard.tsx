@@ -22,6 +22,7 @@ import StatisticsDashboard from "./statistics-dashboard"
 import HistoryView from "./history-view"
 import AuditLogView from "./audit-log-view"
 import CollaboratorsView from "./collaborators-view"
+import { AddEpiDialog } from "./add-epi-dialog"
 import { useToast } from "@/components/ui/use-toast"
 import SignaturePad from "./signature-pad"
 import { addOfflineAction, getOfflineActions, removeOfflineAction, getOfflineQueueCount, OfflineAction } from "@/app/lib/offline-queue"
@@ -669,6 +670,7 @@ export default function ManagerDashboard({
     const [searchTerm, setSearchTerm] = useState("")
     const [filterCategory, setFilterCategory] = useState("ALL")
     const [showStockImages, setShowStockImages] = useState(false)
+    const [isAddEpiOpen, setIsAddEpiOpen] = useState(false)
 
     const userInitials = useMemo(() => {
         if (userName && userName.toLowerCase() !== "inconnu") {
@@ -1587,9 +1589,16 @@ export default function ManagerDashboard({
                             </div>
                             <div className="flex gap-2">
                                 <Button
+                                    size="sm"
+                                    className="bg-brand hover:bg-brand/90 text-white rounded-xl shadow-md font-bold flex items-center gap-1.5"
+                                    onClick={() => setIsAddEpiOpen(true)}
+                                >
+                                    <Plus className="w-4 h-4 stroke-[3]" /> Ajouter un EPI
+                                </Button>
+                                <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-brand border-brand/20 hover:bg-brand/5 rounded-xl"
+                                    className="text-brand border-brand/20 hover:bg-brand/5 rounded-xl font-bold"
                                     onClick={exportInventoryToCSV}
                                 >
                                     <Download className="w-4 h-4 mr-2" /> Exporter Inventaire
@@ -1597,6 +1606,22 @@ export default function ManagerDashboard({
                             </div>
                         </CardHeader>
                     </Card>
+
+                    <AddEpiDialog
+                        isOpen={isAddEpiOpen}
+                        onClose={() => setIsAddEpiOpen(false)}
+                        onSuccess={(newItem) => {
+                            setStock(prev => {
+                                const exists = prev.some(s => s.id === newItem.id || s.category === newItem.category)
+                                if (exists) return prev.map(s => s.category === newItem.category ? newItem : s)
+                                return [...prev, newItem]
+                            })
+                            toast({
+                                title: "EPI Créé avec succès !",
+                                description: `${newItem.label} (${newItem.category}) a été ajouté au stock.`,
+                            })
+                        }}
+                    />
 
                     <div className="flex gap-4 mb-6">
                         <div className="flex-1">

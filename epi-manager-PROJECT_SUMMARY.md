@@ -48,6 +48,11 @@ Ce document sert de **base de connaissances ultra-légère** pour les assistants
 ### 🔔 H. Notifications de Demandes
 *   **Alertes Microsoft Teams ([app/actions.ts](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/app/actions.ts)) :** Envoi automatique et asynchrone d'une "MessageCard" Teams structurée détaillant les équipements demandés, le motif et le collaborateur dès la soumission en ligne d'une nouvelle demande (via variable `TEAMS_WEBHOOK_URL`).
 
+### 🛡️ I. Extension du Catalogue d'EPIs & Bouton d'Ajout Dynamique
+*   **Nouveaux EPIs Pré-configurés ([prisma/seed.ts](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/prisma/seed.ts)) :** Intégration dans les données par défaut des EPIs manquants (*Casque anti-bruit SNR 32dB, Casque de chantier ventilé, Lunettes de protection, Gilet haute visibilité Fluo, Masque FFP2, Pantalon de travail, Veste polaire*).
+*   **Bouton & Modale d'Ajout d'EPI ([components/add-epi-dialog.tsx](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/components/add-epi-dialog.tsx)) :** Bouton `+ Ajouter un EPI` dans le tableau de bord Manager avec modale interactive permettant la saisie du nom, du code catégorie auto-généré, du prix unitaire, du seuil d'alerte et du paramétrage par pré-configurations de tailles (TU, Vêtements, Pointures, Sur-mesure).
+*   **Server Action Dédiée (`createNewStockItem` dans [app/actions.ts](file:///c:/Users/fphil/.gemini/antigravity/scratch/epi-manager/app/actions.ts)) :** Validation Zod, insertion Prisma, journalisation dans l'audit log et revalidation dynamique des pages.
+
 ---
 
 ## 🧪 3. Configuration QA & Environnement Critiques

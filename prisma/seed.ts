@@ -136,6 +136,55 @@ async function main() {
       minThreshold: 5,
       price: 7.0,
       stock: buildStock(sizeTU)
+    },
+    {
+      category: 'PROTECTION_AUDITIVE',
+      label: 'Casque anti-bruit SNR 32dB',
+      minThreshold: 6,
+      price: 24.50,
+      stock: buildStock(sizeTU, 11)
+    },
+    {
+      category: 'CASQUE_SECURITE',
+      label: 'Casque de sécurité ventilé',
+      minThreshold: 5,
+      price: 18.00,
+      stock: buildStock(sizeTU, 15)
+    },
+    {
+      category: 'LUNETTES_PROTECTION',
+      label: 'Lunettes de protection anti-rayures',
+      minThreshold: 8,
+      price: 6.50,
+      stock: buildStock(sizeTU, 25)
+    },
+    {
+      category: 'GILET_HAUTE_VISIBILITE',
+      label: 'Gilet haute visibilité Fluo',
+      minThreshold: 10,
+      price: 12.00,
+      stock: buildStock(sizeXSto2XL, 12)
+    },
+    {
+      category: 'MASQUE_FFP2',
+      label: 'Masque de protection FFP2',
+      minThreshold: 20,
+      price: 2.50,
+      stock: buildStock(sizeTU, 50)
+    },
+    {
+      category: 'PANTALON_DE_TRAVAIL',
+      label: 'Pantalon de travail renforcé',
+      minThreshold: 4,
+      price: 42.00,
+      stock: buildStock(["36", "38", "40", "42", "44", "46", "48"], 6)
+    },
+    {
+      category: 'VESTE_POLAIRE',
+      label: 'Veste polaire grand froid',
+      minThreshold: 5,
+      price: 38.00,
+      stock: buildStock(sizeXSto2XL, 8)
     }
   ];
 

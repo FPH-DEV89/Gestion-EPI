@@ -51,10 +51,45 @@ export default async function HomePage() {
         },
         {
           id: 'fake-casque',
-          category: 'CASQUE',
+          category: 'CASQUE_SECURITE',
           label: 'Casques de sécurité',
           minThreshold: 5,
           stock: { 'TU': 20 }
+        },
+        {
+          id: 'fake-protection-auditive',
+          category: 'PROTECTION_AUDITIVE',
+          label: 'Casque anti-bruit SNR 32dB',
+          minThreshold: 6,
+          stock: { 'TU': 11 }
+        },
+        {
+          id: 'fake-lunettes',
+          category: 'LUNETTES_PROTECTION',
+          label: 'Lunettes de protection anti-rayures',
+          minThreshold: 8,
+          stock: { 'TU': 25 }
+        },
+        {
+          id: 'fake-gilet',
+          category: 'GILET_HAUTE_VISIBILITE',
+          label: 'Gilet haute visibilité Fluo',
+          minThreshold: 10,
+          stock: { 'S': 12, 'M': 15, 'L': 20, 'XL': 10, 'XXL': 5 }
+        },
+        {
+          id: 'fake-masque',
+          category: 'MASQUE_FFP2',
+          label: 'Masque de protection FFP2',
+          minThreshold: 20,
+          stock: { 'TU': 50 }
+        },
+        {
+          id: 'fake-pantalon',
+          category: 'PANTALON_DE_TRAVAIL',
+          label: 'Pantalon de travail renforcé',
+          minThreshold: 4,
+          stock: { '38': 5, '40': 10, '42': 10, '44': 8, '46': 4 }
         }
       ]
       return (

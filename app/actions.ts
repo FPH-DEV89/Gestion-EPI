@@ -537,3 +537,84 @@ async function sendTeamsNotification(requestData: {
     }
 }
 
+const createStockItemSchema = z.object({
+    label: z.string().min(1, "Le nom est requis").max(100),
+    category: z.string().min(1, "La catégorie est requise").max(50),
+    minThreshold: z.number().min(0),
+    price: z.number().min(0),
+    stock: z.record(z.string(), z.number().min(0)),
+});
+
+export async function createNewStockItem(data: {
+    label: string;
+    category: string;
+    minThreshold: number;
+    price: number;
+    stock: Record<string, number>;
+}) {
+    try {
+        const session = await auth();
+        if (!session?.user) {
+            return { success: false, error: "Non autorisé" };
+        }
+
+        const validated = createStockItemSchema.safeParse(data);
+        if (!validated.success) {
+            return { success: false, error: "Données invalides : " + validated.error.issues.map(i => i.message).join(", ") };
+        }
+
+        const cleanCategory = validated.data.category.toUpperCase().trim().replace(/\s+/g, '_').replace(/[^A-Z0-9_]/g, '');
+
+        if (!cleanCategory) {
+            return { success: false, error: "Le code catégorie est invalide." };
+        }
+
+        const existing = await prisma.stockItem.findUnique({
+            where: { category: cleanCategory }
+        });
+
+        if (existing) {
+            return { success: false, error: `Un EPI avec le code catégorie '${cleanCategory}' existe déjà.` };
+        }
+
+        const newItem = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const created = await tx.stockItem.create({
+                data: {
+                    label: validated.data.label,
+                    category: cleanCategory,
+                    minThreshold: validated.data.minThreshold,
+                    price: validated.data.price,
+                    stock: validated.data.stock,
+                }
+            });
+
+            await recordAuditLog(tx, session.user!.id as string, "CREATE_STOCK_ITEM", {
+                category: cleanCategory,
+                label: validated.data.label,
+                minThreshold: validated.data.minThreshold,
+                price: validated.data.price,
+            });
+
+            return created;
+        });
+
+        revalidatePath("/");
+        revalidatePath("/admin");
+        return { 
+            success: true, 
+            item: {
+                id: newItem.id,
+                category: newItem.category,
+                label: newItem.label,
+                minThreshold: newItem.minThreshold,
+                price: newItem.price,
+                stock: (newItem.stock as Record<string, number>) || {}
+            } 
+        };
+    } catch (error) {
+        console.error("Failed to create stock item:", error);
+        return { success: false, error: "Erreur lors de la création du nouvel EPI" };
+    }
+}
+
+
