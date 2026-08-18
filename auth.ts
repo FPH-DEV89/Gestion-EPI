@@ -20,10 +20,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data
+                    const normalizedEmail = email.toLowerCase()
 
-                    const user = await prisma.user.findUnique({
-                        where: { email }
+                    let user = await prisma.user.findUnique({
+                        where: { email: normalizedEmail }
                     })
+
+                    // Auto-seed key admin accounts on-the-fly during login if provided credentials match
+                    const defaultAdmins: Record<string, { pass: string; name: string }> = {
+                        "florian.philibert@stef.com": { pass: "Stef2026!", name: "Florian Philibert" },
+                        "director@example.com": { pass: "DemoDirecteur2026!", name: "Directeur STEF" },
+                    }
+
+                    const defaultAccount = defaultAdmins[normalizedEmail]
+                    if (defaultAccount && password === defaultAccount.pass) {
+                        const hashedPassword = await bcrypt.hash(defaultAccount.pass, 10)
+                        user = await prisma.user.upsert({
+                            where: { email: normalizedEmail },
+                            update: { password: hashedPassword, role: "ADMIN", name: defaultAccount.name },
+                            create: { email: normalizedEmail, password: hashedPassword, role: "ADMIN", name: defaultAccount.name },
+                        })
+                    }
 
                     if (!user) return null
 
