@@ -9,7 +9,7 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { validateRequest, rejectRequest, updateStock, updateSkuMetadata, updateMinThreshold, updatePrice } from "@/app/actions"
+import { validateRequest, rejectRequest, updateStock, updateSkuMetadata, updateMinThreshold, updatePrice, updateStockLabel, updateStockSupplierInfo, updateStockSizes } from "@/app/actions"
 import { handleSignOut } from "@/app/lib/actions"
 import { sortSizes } from "@/lib/utils"
 import { 
@@ -23,6 +23,7 @@ import HistoryView from "./history-view"
 import AuditLogView from "./audit-log-view"
 import CollaboratorsView from "./collaborators-view"
 import { AddEpiDialog } from "./add-epi-dialog"
+import { ManageSizesDialog } from "./manage-sizes-dialog"
 import { useToast } from "@/components/ui/use-toast"
 import SignaturePad from "./signature-pad"
 import { addOfflineAction, getOfflineActions, removeOfflineAction, getOfflineQueueCount, OfflineAction } from "@/app/lib/offline-queue"
@@ -50,27 +51,38 @@ import {
 } from "@/components/ui/pagination"
 
 interface RequestItem {
+    id?: string
     category: string
     size: string
     snapshottedPrice: number
+    quantity?: number
+    requestId?: string
 }
 
 interface Request {
     id: string
     employeeName: string
+    firstName?: string | null
     service: string
-    items: RequestItem[]
     reason: string
     status: string
+    items: RequestItem[]
+    validatedById?: string | null
+    validatedBy?: any | null
+    validatedAt?: string | null
+    signatureData?: string | null
+    signedAt?: string | null
+    deliveredById?: string | null
     createdAt: string
-    validatedBy: string | null
-    validatedAt: string | null
+    updatedAt?: string
 }
 
 interface StockItem {
     id: string
     category: string
     label: string
+    brand?: string | null
+    supplierRef?: string | null
     minThreshold: number
     price: number
     stock: Record<string, number>
@@ -181,6 +193,9 @@ interface StockItemCardProps {
     handleSkuMetadataUpdate: (itemId: string, size: string, field: 'ref' | 'location', value: string) => Promise<void>
     handleUpdateMinThreshold: (itemId: string, threshold: number) => Promise<void>
     handleUpdatePrice: (itemId: string, price: number) => Promise<void>
+    handleUpdateLabel: (itemId: string, label: string) => Promise<void>
+    handleUpdateSupplierInfo: (itemId: string, brand: string, supplierRef: string) => Promise<void>
+    handleUpdateSizes: (itemId: string, newStock: Record<string, number>, newSkuMetadata?: Record<string, any>) => Promise<void>
     daysRemaining?: number | null
 }
 
@@ -191,6 +206,9 @@ function StockItemCard({
     handleSkuMetadataUpdate,
     handleUpdateMinThreshold,
     handleUpdatePrice,
+    handleUpdateLabel,
+    handleUpdateSupplierInfo,
+    handleUpdateSizes,
     daysRemaining
 }: StockItemCardProps) {
     const [selectedSize, setSelectedSize] = useState<string | null>(null)
@@ -201,6 +219,13 @@ function StockItemCard({
     const [editingPrice, setEditingPrice] = useState(false)
     const [editPriceValue, setEditPriceValue] = useState<number | "">(item.price)
 
+    const [editingLabel, setEditingLabel] = useState(false)
+    const [editLabelValue, setEditLabelValue] = useState(item.label)
+    const [editingSupplier, setEditingSupplier] = useState(false)
+    const [editBrandValue, setEditBrandValue] = useState(item.brand || "")
+    const [editSupplierRefValue, setEditSupplierRefValue] = useState(item.supplierRef || "")
+    const [isSizesDialogOpen, setIsSizesDialogOpen] = useState(false)
+
     useEffect(() => {
         setEditThresholdValue(item.minThreshold)
     }, [item.minThreshold])
@@ -208,6 +233,15 @@ function StockItemCard({
     useEffect(() => {
         setEditPriceValue(item.price)
     }, [item.price])
+
+    useEffect(() => {
+        setEditLabelValue(item.label)
+    }, [item.label])
+
+    useEffect(() => {
+        setEditBrandValue(item.brand || "")
+        setEditSupplierRefValue(item.supplierRef || "")
+    }, [item.brand, item.supplierRef])
 
     const totalQuantity = Object.values(item.stock).reduce((a, b) => a + b, 0)
     const hasLowStock = Object.entries(item.stock).some(([size, qty]) => qty < item.minThreshold)
@@ -460,193 +494,318 @@ function StockItemCard({
 
     // Default view: parent item card with size dropdown & quick action buttons
     return (
-        <Card className="overflow-hidden border-0 shadow-2xl bg-white rounded-[40px] transition-all hover:shadow-blue-900/5 group">
-            <div className="p-6 flex flex-col h-full justify-between">
-                <div>
-                    {/* Top Section: Title & Status */}
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="space-y-1 min-w-0 flex-1 mr-2">
-                            <h3 className="text-xl font-black text-slate-800 leading-tight tracking-tight">
-                                {item.label}
-                            </h3>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.category}</span>
-                                <span className="text-slate-300">•</span>
-                                {editingThreshold ? (
-                                    <Input
-                                        type="number"
-                                        autoFocus
-                                        className="h-5 text-[10px] font-black text-[#135bec] bg-white border-brand w-12 p-0.5 text-center inline-block"
-                                        value={editThresholdValue}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setEditThresholdValue(val === "" ? "" : (parseInt(val) || 0));
+        <>
+            <Card className="overflow-hidden border-0 shadow-2xl bg-white rounded-[40px] transition-all hover:shadow-blue-900/5 group">
+                <div className="p-6 flex flex-col h-full justify-between">
+                    <div>
+                        {/* Top Section: Title & Status */}
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="space-y-1 min-w-0 flex-1 mr-2">
+                                {editingLabel ? (
+                                    <div className="flex items-center gap-1 mb-1">
+                                        <Input
+                                            autoFocus
+                                            className="h-8 text-base font-black text-slate-800 bg-white border-brand p-1"
+                                            value={editLabelValue}
+                                            onChange={(e) => setEditLabelValue(e.target.value)}
+                                            onBlur={() => {
+                                                if (editLabelValue.trim() && editLabelValue !== item.label) {
+                                                    handleUpdateLabel(item.id, editLabelValue.trim())
+                                                }
+                                                setEditingLabel(false)
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    if (editLabelValue.trim() && editLabelValue !== item.label) {
+                                                        handleUpdateLabel(item.id, editLabelValue.trim())
+                                                    }
+                                                    setEditingLabel(false)
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    setEditLabelValue(item.label)
+                                                    setEditingLabel(false)
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <h3 
+                                        className="text-xl font-black text-slate-800 leading-tight tracking-tight group/title flex items-center gap-1.5 cursor-pointer hover:text-brand transition-colors"
+                                        onClick={() => {
+                                            setEditingLabel(true)
+                                            setEditLabelValue(item.label)
                                         }}
-                                        onBlur={() => {
-                                            const finalVal = editThresholdValue === "" ? 0 : editThresholdValue;
-                                            handleUpdateMinThreshold(item.id, finalVal)
-                                            setEditingThreshold(false)
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
+                                        title="Cliquer pour modifier le libellé"
+                                    >
+                                        <span>{item.label}</span>
+                                        <PenLine className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover/title:opacity-100 transition-opacity flex-shrink-0" />
+                                    </h3>
+                                )}
+
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.category}</span>
+                                    <span className="text-slate-300">•</span>
+                                    {editingThreshold ? (
+                                        <Input
+                                            type="number"
+                                            autoFocus
+                                            className="h-5 text-[10px] font-black text-[#135bec] bg-white border-brand w-12 p-0.5 text-center inline-block"
+                                            value={editThresholdValue}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setEditThresholdValue(val === "" ? "" : (parseInt(val) || 0));
+                                            }}
+                                            onBlur={() => {
                                                 const finalVal = editThresholdValue === "" ? 0 : editThresholdValue;
                                                 handleUpdateMinThreshold(item.id, finalVal)
                                                 setEditingThreshold(false)
-                                            }
-                                        }}
-                                    />
-                                ) : (
-                                    <button 
-                                        className="text-[10px] font-bold text-slate-500 hover:text-brand cursor-pointer flex items-center gap-0.5 border-none bg-transparent p-0"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setEditingThreshold(true)
-                                            setEditThresholdValue(item.minThreshold)
-                                        }}
-                                        title="Modifier le seuil d'alerte"
-                                    >
-                                        Seuil: {item.minThreshold}
-                                        <PenLine className="w-2.5 h-2.5 inline" />
-                                    </button>
-                                )}
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    const finalVal = editThresholdValue === "" ? 0 : editThresholdValue;
+                                                    handleUpdateMinThreshold(item.id, finalVal)
+                                                    setEditingThreshold(false)
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <button 
+                                            className="text-[10px] font-bold text-slate-500 hover:text-brand cursor-pointer flex items-center gap-0.5 border-none bg-transparent p-0"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setEditingThreshold(true)
+                                                setEditThresholdValue(item.minThreshold)
+                                            }}
+                                            title="Modifier le seuil d'alerte"
+                                        >
+                                            Seuil: {item.minThreshold}
+                                            <PenLine className="w-2.5 h-2.5 inline" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                        {hasLowStock && (
-                            <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse whitespace-nowrap flex-shrink-0">
-                                <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                Alerte Taille
-                            </Badge>
-                        )}
-                    </div>
-
-                    {/* Middle Section: Image & Stats */}
-                    <div className="flex items-center gap-4 my-4">
-                        <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
-                            {showStockImages ? (
-                                <img 
-                                    src={image} 
-                                    alt={item.label}
-                                    className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-                                />
-                            ) : (
-                                (() => {
-                                    const { Icon, colorClass, bgClass } = getCategoryIcon(item.category)
-                                    return (
-                                        <div className={`w-full h-full flex items-center justify-center ${bgClass} transition-colors group-hover:bg-opacity-80`}>
-                                            <Icon className={`w-10 h-10 ${colorClass}`} />
-                                        </div>
-                                    )
-                                })()
+                            {hasLowStock && (
+                                <Badge variant="destructive" className="bg-red-50 text-red-500 border-red-100 rounded-full px-3 py-1 text-[10px] font-black uppercase flex items-center gap-1 animate-pulse whitespace-nowrap flex-shrink-0">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                    Alerte Taille
+                                </Badge>
                             )}
                         </div>
 
-                        <div className="flex-1">
-                            <p className="text-2xl font-black text-slate-800 leading-none">{totalQuantity}</p>
-                            <p className="text-xs font-bold text-slate-400 mt-1">Articles au total</p>
-                            <div className="flex items-center gap-1.5 mt-2">
-                                {editingPrice ? (
+                        {/* Supplier Brand & Ref row */}
+                        <div className="mb-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                            {editingSupplier ? (
+                                <div className="flex items-center gap-1 w-full bg-slate-50 p-2 rounded-2xl border border-blue-200">
                                     <Input
-                                        autoFocus
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        className="h-6 text-xs font-black text-emerald-700 bg-white border-emerald-300 w-20 p-1 text-right"
-                                        value={editPriceValue}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setEditPriceValue(val === "" ? "" : (parseFloat(val) || 0));
-                                        }}
-                                        onBlur={() => {
-                                            const finalVal = editPriceValue === "" ? 0 : editPriceValue;
-                                            handleUpdatePrice(item.id, finalVal)
-                                            setEditingPrice(false)
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                const finalVal = editPriceValue === "" ? 0 : editPriceValue;
-                                                handleUpdatePrice(item.id, finalVal)
-                                                setEditingPrice(false)
-                                            }
-                                            if (e.key === 'Escape') {
-                                                setEditPriceValue(item.price)
-                                                setEditingPrice(false)
-                                            }
-                                        }}
+                                        placeholder="Marque"
+                                        className="h-7 text-xs font-bold bg-white border-slate-200 p-1 flex-1"
+                                        value={editBrandValue}
+                                        onChange={(e) => setEditBrandValue(e.target.value)}
                                     />
-                                ) : (
-                                    <button
-                                        className="text-xs font-black text-emerald-600 hover:text-emerald-800 cursor-pointer flex items-center gap-0.5 border-none bg-transparent p-0 transition-colors"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setEditingPrice(true)
-                                            setEditPriceValue(item.price)
+                                    <Input
+                                        placeholder="Réf Fournisseur"
+                                        className="h-7 text-xs font-mono font-bold bg-white border-slate-200 p-1 flex-1"
+                                        value={editSupplierRefValue}
+                                        onChange={(e) => setEditSupplierRefValue(e.target.value)}
+                                    />
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        className="h-7 w-7 bg-brand text-white rounded-xl flex-shrink-0"
+                                        onClick={() => {
+                                            handleUpdateSupplierInfo(item.id, editBrandValue, editSupplierRefValue)
+                                            setEditingSupplier(false)
                                         }}
-                                        title="Modifier le prix unitaire"
                                     >
-                                        {item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                                        <PenLine className="w-2.5 h-2.5 inline" />
-                                    </button>
-                                )}
-                            </div>
-                            {daysRemaining !== undefined && daysRemaining !== null && (
-                                <div className={`flex items-center gap-1 mt-1.5 text-[10px] font-black uppercase tracking-wider ${
-                                    daysRemaining < 0 ? 'text-slate-400' : daysRemaining < 30 ? 'text-red-500' : daysRemaining < 60 ? 'text-amber-500' : 'text-emerald-500'
-                                }`}>
-                                    <BarChart3 className="w-3 h-3" />
-                                    {daysRemaining < 0 ? 'N/A' : `~${daysRemaining}j de stock`}
+                                        <Check className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 text-slate-400 rounded-xl flex-shrink-0 hover:bg-slate-200/50"
+                                        onClick={() => setEditingSupplier(false)}
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div 
+                                    onClick={() => {
+                                        setEditingSupplier(true)
+                                        setEditBrandValue(item.brand || "")
+                                        setEditSupplierRefValue(item.supplierRef || "")
+                                    }}
+                                    className="flex items-center justify-between w-full text-xs font-medium text-slate-500 hover:text-brand cursor-pointer group/supp py-0.5"
+                                    title="Cliquer pour modifier la marque et référence fournisseur"
+                                >
+                                    <div className="flex items-center gap-1.5 overflow-hidden">
+                                        {item.brand ? (
+                                            <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg truncate text-[11px]">
+                                                🏷️ {item.brand}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 italic text-[10px] hover:underline">+ Marque</span>
+                                        )}
+                                        {item.supplierRef ? (
+                                            <span className="font-mono text-[10px] font-bold text-brand bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 truncate">
+                                                Réf: {item.supplierRef}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 italic text-[10px] hover:underline">• + Réf Fournisseur</span>
+                                        )}
+                                    </div>
+                                    <PenLine className="w-3 h-3 text-slate-400 opacity-0 group-hover/supp:opacity-100 transition-opacity flex-shrink-0" />
                                 </div>
                             )}
                         </div>
+
+                        {/* Middle Section: Image & Stats */}
+                        <div className="flex items-center gap-4 my-3">
+                            <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center">
+                                {showStockImages ? (
+                                    <img 
+                                        src={image} 
+                                        alt={item.label}
+                                        className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+                                    />
+                                ) : (
+                                    (() => {
+                                        const { Icon, colorClass, bgClass } = getCategoryIcon(item.category)
+                                        return (
+                                            <div className={`w-full h-full flex items-center justify-center ${bgClass} transition-colors group-hover:bg-opacity-80`}>
+                                                <Icon className={`w-10 h-10 ${colorClass}`} />
+                                            </div>
+                                        )
+                                    })()
+                                )}
+                            </div>
+
+                            <div className="flex-1">
+                                <p className="text-2xl font-black text-slate-800 leading-none">{totalQuantity}</p>
+                                <p className="text-xs font-bold text-slate-400 mt-1">Articles au total</p>
+                                <div className="flex items-center gap-1.5 mt-2">
+                                    {editingPrice ? (
+                                        <Input
+                                            autoFocus
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            className="h-6 text-xs font-black text-emerald-700 bg-white border-emerald-300 w-20 p-1 text-right"
+                                            value={editPriceValue}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setEditPriceValue(val === "" ? "" : (parseFloat(val) || 0));
+                                            }}
+                                            onBlur={() => {
+                                                const finalVal = editPriceValue === "" ? 0 : editPriceValue;
+                                                handleUpdatePrice(item.id, finalVal)
+                                                setEditingPrice(false)
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    const finalVal = editPriceValue === "" ? 0 : editPriceValue;
+                                                    handleUpdatePrice(item.id, finalVal)
+                                                    setEditingPrice(false)
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    setEditPriceValue(item.price)
+                                                    setEditingPrice(false)
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <button
+                                            className="text-xs font-black text-emerald-600 hover:text-emerald-800 cursor-pointer flex items-center gap-0.5 border-none bg-transparent p-0 transition-colors"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setEditingPrice(true)
+                                                setEditPriceValue(item.price)
+                                            }}
+                                            title="Modifier le prix unitaire"
+                                        >
+                                            {item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                                            <PenLine className="w-2.5 h-2.5 inline" />
+                                        </button>
+                                    )}
+                                </div>
+                                {daysRemaining !== undefined && daysRemaining !== null && (
+                                    <div className={`flex items-center gap-1 mt-1.5 text-[10px] font-black uppercase tracking-wider ${
+                                        daysRemaining < 0 ? 'text-slate-400' : daysRemaining < 30 ? 'text-red-500' : daysRemaining < 60 ? 'text-amber-500' : 'text-emerald-500'
+                                    }`}>
+                                        <BarChart3 className="w-3 h-3" />
+                                        {daysRemaining < 0 ? 'N/A' : `~${daysRemaining}j de stock`}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Sizes Selection Dropdown */}
+                        <div className="mt-4">
+                            <Select onValueChange={(val) => setSelectedSize(val)}>
+                                <SelectTrigger className="w-full bg-slate-50 border-slate-200 text-slate-700 font-bold rounded-2xl h-12">
+                                    <SelectValue placeholder="Choisir une taille..." />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white rounded-xl shadow-lg border border-slate-100">
+                                    {sortedSizesList.map(size => {
+                                        const qty = item.stock[size] || 0
+                                        return (
+                                            <SelectItem key={size} value={size} className="font-semibold text-slate-700">
+                                                Taille {size} ({qty} en stock)
+                                            </SelectItem>
+                                        )
+                                    })}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
-                    {/* Sizes Selection Dropdown */}
-                    <div className="mt-4">
-                        <Select onValueChange={(val) => setSelectedSize(val)}>
-                            <SelectTrigger className="w-full bg-slate-50 border-slate-200 text-slate-700 font-bold rounded-2xl h-12">
-                                <SelectValue placeholder="Choisir une taille..." />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white rounded-xl shadow-lg border border-slate-100">
-                                {sortedSizesList.map(size => {
-                                    const qty = item.stock[size] || 0
-                                    return (
-                                        <SelectItem key={size} value={size} className="font-semibold text-slate-700">
-                                            Taille {size} ({qty} en stock)
-                                        </SelectItem>
-                                    )
-                                })}
-                            </SelectContent>
-                        </Select>
+                    {/* Quick Select Buttons Grid & Manage Sizes Action */}
+                    <div className="mt-4 pt-4 border-t border-slate-100">
+                        <div className="flex justify-between items-center mb-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Accès rapide par taille</p>
+                            <button
+                                type="button"
+                                onClick={() => setIsSizesDialogOpen(true)}
+                                className="text-[10px] font-black text-brand hover:text-blue-800 flex items-center gap-1 cursor-pointer bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-100 transition-all hover:shadow-sm active:scale-95"
+                                title="Modifier, ajouter ou supprimer des tailles"
+                            >
+                                <Settings className="w-3 h-3" /> Gérer les tailles
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {sortedSizesList.map(size => {
+                                const qty = item.stock[size] || 0
+                                const isLow = qty < item.minThreshold
+                                return (
+                                    <button
+                                        key={size}
+                                        onClick={() => setSelectedSize(size)}
+                                        className={`h-8 px-2.5 rounded-lg text-xs font-black transition-all border flex items-center gap-1 cursor-pointer active:scale-95 ${
+                                            qty <= 0 
+                                                ? "bg-red-50 text-red-500 border-red-100 hover:bg-red-100/50" 
+                                                : isLow 
+                                                    ? "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50" 
+                                                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
+                                        }`}
+                                    >
+                                        <span>T.{size}</span>
+                                        <span className="opacity-60">({qty})</span>
+                                    </button>
+                                )
+                            })}
+                        </div>
                     </div>
                 </div>
+            </Card>
 
-                {/* Quick Select Buttons Grid */}
-                <div className="mt-4 pt-4 border-t border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Accès rapide par taille</p>
-                    <div className="flex flex-wrap gap-1.5">
-                        {sortedSizesList.map(size => {
-                            const qty = item.stock[size] || 0
-                            const isLow = qty < item.minThreshold
-                            return (
-                                <button
-                                    key={size}
-                                    onClick={() => setSelectedSize(size)}
-                                    className={`h-8 px-2.5 rounded-lg text-xs font-black transition-all border flex items-center gap-1 cursor-pointer active:scale-95 ${
-                                        qty <= 0 
-                                            ? "bg-red-50 text-red-500 border-red-100 hover:bg-red-100/50" 
-                                            : isLow 
-                                                ? "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50" 
-                                                : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
-                                    }`}
-                                >
-                                    <span>T.{size}</span>
-                                    <span className="opacity-60">({qty})</span>
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-            </div>
-        </Card>
+            <ManageSizesDialog
+                isOpen={isSizesDialogOpen}
+                onClose={() => setIsSizesDialogOpen(false)}
+                item={item}
+                onSave={handleUpdateSizes}
+            />
+        </>
     )
 }
 
@@ -1095,6 +1254,78 @@ export default function ManagerDashboard({
                     }
                 })
                 return { ...item, price }
+            }
+            return item
+        }))
+    }
+
+    const handleUpdateLabel = async (itemId: string, newLabel: string) => {
+        setStock(prev => prev.map(item => {
+            if (item.id === itemId || item.category === itemId) {
+                updateStockLabel(item.id, newLabel).then(res => {
+                    if (!res.success) {
+                        toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: res.error || "Impossible de modifier le libellé."
+                        })
+                    } else {
+                        toast({
+                            title: "✅ Libellé mis à jour",
+                            description: `Le nom de l'équipement a été modifié en "${newLabel}".`,
+                            className: "bg-emerald-50 border-emerald-200 text-emerald-800",
+                        })
+                    }
+                })
+                return { ...item, label: newLabel }
+            }
+            return item
+        }))
+    }
+
+    const handleUpdateSupplierInfo = async (itemId: string, brand: string, supplierRef: string) => {
+        setStock(prev => prev.map(item => {
+            if (item.id === itemId || item.category === itemId) {
+                updateStockSupplierInfo(item.id, brand, supplierRef).then(res => {
+                    if (!res.success) {
+                        toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: res.error || "Impossible de mettre à jour les informations fournisseur."
+                        })
+                    } else {
+                        toast({
+                            title: "✅ Fournisseur mis à jour",
+                            description: `Marque et référence fournisseur enregistrées pour ${item.label}.`,
+                            className: "bg-emerald-50 border-emerald-200 text-emerald-800",
+                        })
+                    }
+                })
+                return { ...item, brand, supplierRef }
+            }
+            return item
+        }))
+    }
+
+    const handleUpdateSizes = async (itemId: string, newStock: Record<string, number>, newSkuMetadata?: Record<string, any>) => {
+        setStock(prev => prev.map(item => {
+            if (item.id === itemId || item.category === itemId) {
+                updateStockSizes(item.id, newStock, newSkuMetadata).then(res => {
+                    if (!res.success) {
+                        toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: res.error || "Impossible de modifier les tailles."
+                        })
+                    } else {
+                        toast({
+                            title: "✅ Tailles enregistrées",
+                            description: `Les tailles pour ${item.label} ont été mises à jour.`,
+                            className: "bg-emerald-50 border-emerald-200 text-emerald-800",
+                        })
+                    }
+                })
+                return { ...item, stock: newStock, skuMetadata: newSkuMetadata ?? item.skuMetadata }
             }
             return item
         }))
@@ -1655,6 +1886,9 @@ export default function ManagerDashboard({
                                 handleSkuMetadataUpdate={handleSkuMetadataUpdate}
                                 handleUpdateMinThreshold={handleUpdateMinThreshold}
                                 handleUpdatePrice={handleUpdatePrice}
+                                handleUpdateLabel={handleUpdateLabel}
+                                handleUpdateSupplierInfo={handleUpdateSupplierInfo}
+                                handleUpdateSizes={handleUpdateSizes}
                                 daysRemaining={daysRemainingMap[item.id]}
                             />
                         ))}

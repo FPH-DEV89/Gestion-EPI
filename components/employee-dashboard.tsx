@@ -11,6 +11,8 @@ interface StockItem {
     id: string
     category: string
     label: string
+    brand?: string | null
+    supplierRef?: string | null
     stock: Record<string, number>
 }
 

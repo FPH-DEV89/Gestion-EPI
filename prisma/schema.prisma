@@ -51,6 +51,8 @@ model StockItem {
   id           String   @id @default(cuid())
   category     String   @unique
   label        String   @default("")
+  brand        String?  @default("")
+  supplierRef  String?  @default("")
   minThreshold Int      @default(5)
   price        Float    @default(0)
   stock        Json     // Structure : {"42": 5, "43": 0, "M": 10}

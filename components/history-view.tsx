@@ -32,8 +32,8 @@ interface Request {
     reason: string
     status: string
     createdAt: string
-    validatedBy: string | null
-    validatedAt: string | null
+    validatedBy?: any | null
+    validatedAt?: string | null
     signatureData?: string | null
     signedAt?: string | null
 }

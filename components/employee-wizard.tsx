@@ -16,6 +16,8 @@ export interface StockItem {
     id: string
     category: string
     label: string
+    brand?: string | null
+    supplierRef?: string | null
     minThreshold?: number
     stock: Record<string, number>
 }

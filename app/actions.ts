@@ -540,6 +540,8 @@ async function sendTeamsNotification(requestData: {
 const createStockItemSchema = z.object({
     label: z.string().min(1, "Le nom est requis").max(100),
     category: z.string().min(1, "La catégorie est requise").max(50),
+    brand: z.string().max(100).optional(),
+    supplierRef: z.string().max(100).optional(),
     minThreshold: z.number().min(0),
     price: z.number().min(0),
     stock: z.record(z.string(), z.number().min(0)),
@@ -548,6 +550,8 @@ const createStockItemSchema = z.object({
 export async function createNewStockItem(data: {
     label: string;
     category: string;
+    brand?: string;
+    supplierRef?: string;
     minThreshold: number;
     price: number;
     stock: Record<string, number>;
@@ -582,6 +586,8 @@ export async function createNewStockItem(data: {
                 data: {
                     label: validated.data.label,
                     category: cleanCategory,
+                    brand: validated.data.brand || "",
+                    supplierRef: validated.data.supplierRef || "",
                     minThreshold: validated.data.minThreshold,
                     price: validated.data.price,
                     stock: validated.data.stock,
@@ -591,6 +597,8 @@ export async function createNewStockItem(data: {
             await recordAuditLog(tx, session.user!.id as string, "CREATE_STOCK_ITEM", {
                 category: cleanCategory,
                 label: validated.data.label,
+                brand: validated.data.brand,
+                supplierRef: validated.data.supplierRef,
                 minThreshold: validated.data.minThreshold,
                 price: validated.data.price,
             });
@@ -606,6 +614,8 @@ export async function createNewStockItem(data: {
                 id: newItem.id,
                 category: newItem.category,
                 label: newItem.label,
+                brand: newItem.brand || "",
+                supplierRef: newItem.supplierRef || "",
                 minThreshold: newItem.minThreshold,
                 price: newItem.price,
                 stock: (newItem.stock as Record<string, number>) || {}
@@ -616,5 +626,133 @@ export async function createNewStockItem(data: {
         return { success: false, error: "Erreur lors de la création du nouvel EPI" };
     }
 }
+
+export async function updateStockLabel(categoryId: string, label: string) {
+    try {
+        const session = await auth();
+        if (!session?.user) {
+            return { success: false, error: "Non autorisé" };
+        }
+
+        const trimmedLabel = label.trim();
+        if (!trimmedLabel) {
+            return { success: false, error: "Le libellé ne peut pas être vide." };
+        }
+
+        const stockItem = await prisma.stockItem.findFirst({
+            where: { OR: [{ id: categoryId }, { category: categoryId }] }
+        });
+
+        if (!stockItem) {
+            return { success: false, error: "EPI introuvable." };
+        }
+
+        const oldLabel = stockItem.label;
+
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await tx.stockItem.update({
+                where: { id: stockItem.id },
+                data: { label: trimmedLabel }
+            });
+
+            await recordAuditLog(tx, session.user!.id as string, "UPDATE_STOCK_LABEL", {
+                category: stockItem.category,
+                oldLabel,
+                newLabel: trimmedLabel
+            });
+        });
+
+        revalidatePath("/");
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update stock label:", error);
+        return { success: false, error: "Erreur lors de la mise à jour du libellé." };
+    }
+}
+
+export async function updateStockSupplierInfo(categoryId: string, brand: string, supplierRef: string) {
+    try {
+        const session = await auth();
+        if (!session?.user) {
+            return { success: false, error: "Non autorisé" };
+        }
+
+        const stockItem = await prisma.stockItem.findFirst({
+            where: { OR: [{ id: categoryId }, { category: categoryId }] }
+        });
+
+        if (!stockItem) {
+            return { success: false, error: "EPI introuvable." };
+        }
+
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await tx.stockItem.update({
+                where: { id: stockItem.id },
+                data: { 
+                    brand: brand.trim(),
+                    supplierRef: supplierRef.trim()
+                }
+            });
+
+            await recordAuditLog(tx, session.user!.id as string, "UPDATE_STOCK_SUPPLIER", {
+                category: stockItem.category,
+                brand: brand.trim(),
+                supplierRef: supplierRef.trim()
+            });
+        });
+
+        revalidatePath("/");
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update stock supplier info:", error);
+        return { success: false, error: "Erreur lors de la mise à jour des informations fournisseur." };
+    }
+}
+
+export async function updateStockSizes(categoryId: string, newStock: Record<string, number>, newSkuMetadata?: Record<string, any>) {
+    try {
+        const session = await auth();
+        if (!session?.user) {
+            return { success: false, error: "Non autorisé" };
+        }
+
+        if (!newStock || Object.keys(newStock).length === 0) {
+            return { success: false, error: "Un EPI doit avoir au moins une taille définie." };
+        }
+
+        const stockItem = await prisma.stockItem.findFirst({
+            where: { OR: [{ id: categoryId }, { category: categoryId }] }
+        });
+
+        if (!stockItem) {
+            return { success: false, error: "EPI introuvable." };
+        }
+
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await tx.stockItem.update({
+                where: { id: stockItem.id },
+                data: { 
+                    stock: newStock,
+                    ...(newSkuMetadata !== undefined ? { skuMetadata: newSkuMetadata } : {})
+                }
+            });
+
+            await recordAuditLog(tx, session.user!.id as string, "UPDATE_STOCK_SIZES", {
+                category: stockItem.category,
+                sizes: Object.keys(newStock)
+            });
+        });
+
+        revalidatePath("/");
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update stock sizes:", error);
+        return { success: false, error: "Erreur lors de la modification des tailles." };
+    }
+}
+
 
 

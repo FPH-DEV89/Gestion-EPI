@@ -21,6 +21,8 @@ const SHOE_SIZES = ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", 
 export function AddEpiDialog({ isOpen, onClose, onSuccess }: AddEpiDialogProps) {
     const [label, setLabel] = useState("")
     const [category, setCategory] = useState("")
+    const [brand, setBrand] = useState("")
+    const [supplierRef, setSupplierRef] = useState("")
     const [autoCategory, setAutoCategory] = useState(true)
     const [price, setPrice] = useState<number | "">(10)
     const [minThreshold, setMinThreshold] = useState<number | "">(5)
@@ -113,6 +115,8 @@ export function AddEpiDialog({ isOpen, onClose, onSuccess }: AddEpiDialogProps) 
             const res = await createNewStockItem({
                 label: label.trim(),
                 category: category.trim(),
+                brand: brand.trim(),
+                supplierRef: supplierRef.trim(),
                 minThreshold: typeof minThreshold === "number" ? minThreshold : 5,
                 price: typeof price === "number" ? price : 0,
                 stock: customStock
@@ -221,6 +225,26 @@ export function AddEpiDialog({ isOpen, onClose, onSuccess }: AddEpiDialogProps) 
                                 onChange={(e) => setMinThreshold(e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
                                 className="rounded-xl border-slate-200"
                                 required
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-700">Marque / Fabricant</Label>
+                            <Input
+                                placeholder="ex: Delta Plus, Coverguard..."
+                                value={brand}
+                                onChange={(e) => setBrand(e.target.value)}
+                                className="rounded-xl border-slate-200"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-700">Référence Fournisseur</Label>
+                            <Input
+                                placeholder="ex: REF-DP-489"
+                                value={supplierRef}
+                                onChange={(e) => setSupplierRef(e.target.value)}
+                                className="rounded-xl border-slate-200 font-mono text-xs"
                             />
                         </div>
                     </div>
