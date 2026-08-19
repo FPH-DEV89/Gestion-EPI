@@ -1,9 +1,10 @@
 /// <reference lib="webworker" />
+import type { PrecacheEntry } from "serwist";
 import { defaultCache } from "@serwist/next/worker";
 import { Serwist } from "serwist";
 
 declare const self: ServiceWorkerGlobalScope & {
-  __SW_MANIFEST: any;
+  __SW_MANIFEST: PrecacheEntry[];
 };
 
 const serwist = new Serwist({
@@ -24,15 +25,37 @@ const serwist = new Serwist({
   },
 });
 
-// CRITICAL: Bypass Serwist entirely for all non-GET requests.
-// A bare `return` (no respondWith) still lets Serwist's listener run and
-// return a `no-response` network error for Server Actions and form POSTs.
-// By calling event.respondWith(fetch(...)) we claim the event first so
-// Serwist cannot intercept POST / PUT / DELETE / PATCH requests.
-self.addEventListener("fetch", (event: any) => {
-  if (event.request.method !== "GET") {
-    event.respondWith(fetch(event.request));
+// Dynamic Next.js responses must not be served from a stale service-worker
+// cache. Otherwise a deployment can briefly mix old RSC/HTML with new client
+// bundles and surface a client-side exception until the page is reloaded.
+self.addEventListener("fetch", (event: FetchEvent) => {
+  const { request } = event;
+  const url = new URL(request.url);
+  const isNextDynamicRequest =
+    request.mode === "navigate" ||
+    request.destination === "document" ||
+    request.headers.has("RSC") ||
+    request.headers.has("Next-Router-Prefetch") ||
+    request.headers.has("Next-Router-State-Tree") ||
+    request.headers.has("Next-Url") ||
+    url.pathname.startsWith("/api/auth/");
+
+  // Server Actions and form submissions must never be handled by Serwist.
+  if (request.method !== "GET") {
+    event.respondWith(fetch(request));
     return;
+  }
+
+  if (isNextDynamicRequest) {
+    event.respondWith(
+      fetch(request, { cache: "no-store" }).catch(async () => {
+        const offlineResponse = await caches.match("/offline");
+        if (offlineResponse) {
+          return offlineResponse;
+        }
+        throw new Error("Network unavailable and offline fallback is missing");
+      }),
+    );
   }
 });
 
