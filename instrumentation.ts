@@ -26,8 +26,8 @@ export async function register() {
         return;
     }
 
-    // @ts-expect-error node-cron is loaded dynamically in node environment
-    const cron = await import(/* webpackIgnore: true */ 'node-cron');
+    // @ts-ignore
+    const cron = eval('require')('node-cron');
     const { runWeeklyRecap } = await import('@/lib/weekly-recap');
 
     // Deux fois par jour, à 10h et 14h, équivalent au "0 10,14 * * *" utilisé
